@@ -40,12 +40,14 @@ public final class ComunidadDtos {
     /** estado solo tiene valor cuando la ve su autor o el equipo del negocio. */
     public record ResenaDto(UUID id, int calificacion, String titulo, String texto, LocalDate fechaVisita,
                             String autorNombre, OffsetDateTime creadoEn, int utiles, String estado,
-                            List<FotoResenaDto> fotos, RespuestaResenaDto respuesta) {
+                            List<FotoResenaDto> fotos, RespuestaResenaDto respuesta,
+                            boolean mia, boolean yoMarqueUtil) {
     }
 
-    /** Una reseña propia con los datos mínimos del negocio reseñado (para "Mis reseñas"). */
-    public record MiResenaDto(ResenaDto resena, UUID negocioId, String negocioSlug, String negocioNombre,
-                              String categoriaClave, String municipioNombre) {
+    /** Una reseña propia con el negocio al que pertenece, para la lista «Mis reseñas». */
+    public record MiResenaDto(UUID id, UUID negocioId, String negocioSlug, String negocioNombre, int calificacion,
+                              String titulo, String texto, LocalDate fechaVisita, String estado, int utiles,
+                              OffsetDateTime creadoEn) {
     }
 
     public record CalificacionDto(BigDecimal promedio, int total, Map<Integer, Integer> distribucion) {
@@ -76,8 +78,10 @@ public final class ComunidadDtos {
             String texto) {
     }
 
+    /** mio y yoLeDiMeGusta solo valen cuando la petición trae sesión; sin ella van en false. */
     public record ComentarioDto(UUID id, UUID padreId, String autorNombre, String texto, OffsetDateTime creadoEn,
-                                int meGusta, String estado, List<ComentarioDto> respuestas) {
+                                int meGusta, String estado, List<ComentarioDto> respuestas,
+                                boolean mio, boolean yoLeDiMeGusta) {
     }
 
     // ---------------- reacciones ----------------

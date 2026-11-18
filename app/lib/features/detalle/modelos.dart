@@ -509,7 +509,8 @@ class MiResena {
   final String? municipioNombre;
 
   factory MiResena.desdeJson(Map<String, dynamic> j) => MiResena(
-        resena: ResenaPropia.desdeJson(j['resena'] is Map ? Map<String, dynamic>.from(j['resena'] as Map) : <String, dynamic>{}),
+        // La API manda la reseña "plana" (calificacion, titulo... junto al negocio); también se acepta anidada en "resena".
+        resena: ResenaPropia.desdeJson(j['resena'] is Map ? Map<String, dynamic>.from(j['resena'] as Map) : j),
         negocioId: (j['negocioId'] ?? '').toString(),
         negocioSlug: (j['negocioSlug'] ?? '').toString(),
         negocioNombre: (j['negocioNombre'] ?? '').toString(),

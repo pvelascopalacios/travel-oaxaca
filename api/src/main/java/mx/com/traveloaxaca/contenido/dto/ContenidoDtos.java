@@ -36,7 +36,7 @@ public final class ContenidoDtos {
 
     public record LugarEntradaDto(
             @NotNull(message = "Elige el tipo de lugar.")
-            @Pattern(regexp = "^(arqueologico|natural|cultural|playa|mercado|templo|otro)$", message = "Tipo de lugar no válido.") String tipo,
+            @Pattern(regexp = "^(arqueologico|natural|cultural|playa|mercado|templo|otro|bosque|mirador|cascada|presa)$", message = "Tipo de lugar no válido.") String tipo,
             UUID municipioId, UUID padreId, Double latitud, Double longitud, boolean destacado,
             @NotNull(message = "Indica el estado.")
             @Pattern(regexp = "^(borrador|publicado|archivado)$", message = "El estado debe ser borrador, publicado o archivado.") String estado,

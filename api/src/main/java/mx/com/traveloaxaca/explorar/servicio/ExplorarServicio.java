@@ -344,7 +344,7 @@ public class ExplorarServicio {
     }
 
     private static final Set<String> TIPOS_LUGAR = Set.of("arqueologico", "natural", "cultural", "playa", "mercado",
-            "templo", "otro");
+            "templo", "otro", "bosque", "mirador", "cascada", "presa");
 
     public Pagina<LugarTarjetaDto> buscarLugares(BusquedaLugares b, String idiomaPedido) {
         String idioma = catalogo.idioma(idiomaPedido);

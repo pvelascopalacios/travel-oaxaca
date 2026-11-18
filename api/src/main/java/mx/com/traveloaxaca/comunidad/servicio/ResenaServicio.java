@@ -14,11 +14,12 @@ import mx.com.traveloaxaca.comun.api.Pagina;
 import mx.com.traveloaxaca.comun.error.BusinessException;
 import mx.com.traveloaxaca.comunidad.dto.ComunidadDtos.CalificacionDto;
 import mx.com.traveloaxaca.comunidad.dto.ComunidadDtos.FotoResenaDto;
-import mx.com.traveloaxaca.comunidad.dto.ComunidadDtos.ResenaDto;
 import mx.com.traveloaxaca.comunidad.dto.ComunidadDtos.MiResenaDto;
+import mx.com.traveloaxaca.comunidad.dto.ComunidadDtos.ResenaDto;
 import mx.com.traveloaxaca.comunidad.dto.ComunidadDtos.ResenaEntradaDto;
 import mx.com.traveloaxaca.comunidad.dto.ComunidadDtos.ResenasPublicasDto;
 import mx.com.traveloaxaca.comunidad.dto.ComunidadDtos.RespuestaResenaDto;
+import mx.com.traveloaxaca.comunidad.repo.ReaccionRepositorio;
 import mx.com.traveloaxaca.comunidad.repo.ResenaRepositorio;
 import mx.com.traveloaxaca.comunidad.repo.ResenaRepositorio.FotoFila;
 import mx.com.traveloaxaca.comunidad.repo.ResenaRepositorio.ResenaFila;
@@ -46,9 +47,11 @@ public class ResenaServicio {
     private final ComunidadConfig cfg;
     private final AccesoNegocio acceso;
     private final MedioRepositorio medios;
+    private final ReaccionRepositorio reacciones;
 
     public ResenaServicio(ResenaRepositorio repo, CatalogoServicio catalogo, AlmacenMedios almacen,
-                          FiltroContenido filtro, ComunidadConfig cfg, AccesoNegocio acceso, MedioRepositorio medios) {
+                          FiltroContenido filtro, ComunidadConfig cfg, AccesoNegocio acceso, MedioRepositorio medios,
+                          ReaccionRepositorio reacciones) {
         this.repo = repo;
         this.catalogo = catalogo;
         this.almacen = almacen;
@@ -56,6 +59,7 @@ public class ResenaServicio {
         this.cfg = cfg;
         this.acceso = acceso;
         this.medios = medios;
+        this.reacciones = reacciones;
     }
 
     static int tamano(Integer t) {
@@ -69,7 +73,8 @@ public class ResenaServicio {
     // ---------------- lectura pública ----------------
 
     @Transactional(readOnly = true)
-    public ResenasPublicasDto publicas(String slug, String destino, String orden, Integer pagina, Integer tamano) {
+    public ResenasPublicasDto publicas(String slug, String destino, String orden, Integer pagina, Integer tamano,
+                                       UUID usuarioId) {
         String o = orden == null || orden.isBlank() ? "recientes" : orden;
         if (!ORDENES.contains(o)) {
             throw BusinessException.invalida("El orden debe ser recientes, mejor, peor o utiles.",
@@ -80,7 +85,7 @@ public class ResenaServicio {
         int pag = pagina(pagina);
         int tam = tamano(tamano);
         List<ResenaFila> filas = repo.publicadas(negocioId, o, tam, pag * tam);
-        List<ResenaDto> elementos = aDtos(filas, false);
+        List<ResenaDto> elementos = aDtos(filas, false, usuarioId);
         return new ResenasPublicasDto(new Pagina<>(elementos, repo.contarPublicadas(negocioId), pag, tam),
                 calificacion(negocioId));
     }
@@ -114,22 +119,13 @@ public class ResenaServicio {
         return aDtos(List.of(r), true).get(0);
     }
 
-    /** Todas mis reseñas, las más recientes primero, con el negocio al que pertenece cada una. */
+    /** Todas mis reseñas, con el negocio de cada una. */
     @Transactional(readOnly = true)
     public List<MiResenaDto> mias(UUID usuarioId) {
-        List<ResenaFila> filas = repo.deUsuarioTodas(usuarioId);
-        List<ResenaDto> dtos = aDtos(filas, true);
-        Map<UUID, ResenaRepositorio.NegocioDeResena> negocios = repo
-                .negociosDeResenas(filas.stream().map(ResenaFila::id).toList()).stream()
-                .collect(Collectors.toMap(ResenaRepositorio.NegocioDeResena::resenaId, x -> x, (a, b) -> a));
-        List<MiResenaDto> r = new ArrayList<>();
-        for (ResenaDto d : dtos) {
-            ResenaRepositorio.NegocioDeResena n = negocios.get(d.id());
-            if (n != null) {
-                r.add(new MiResenaDto(d, n.negocioId(), n.slug(), n.nombre(), n.categoriaClave(), n.municipioNombre()));
-            }
-        }
-        return r;
+        return repo.deUsuarioTodas(usuarioId).stream()
+                .map(r -> new MiResenaDto(r.id(), r.negocioId(), r.negocioSlug(), r.negocioNombre(), r.calificacion(),
+                        r.titulo(), r.texto(), r.fechaVisita(), r.estado(), r.utiles(), r.creadoEn()))
+                .toList();
     }
 
     @Transactional
@@ -283,6 +279,12 @@ public class ResenaServicio {
 
     /** privado = true cuando la ve su autor: muestra el estado y las fotos aún no aprobadas. */
     private List<ResenaDto> aDtos(List<ResenaFila> filas, boolean privado) {
+        return aDtos(filas, privado, null);
+    }
+
+    /** usuarioId es quien pide (puede ser null): sirve para marcar «mía» y «ya la marqué útil». */
+    private List<ResenaDto> aDtos(List<ResenaFila> filas, boolean privado, UUID usuarioId) {
+        Set<UUID> utiles = reacciones.reaccionados(usuarioId, "resena", filas.stream().map(ResenaFila::id).toList());
         Map<UUID, List<FotoFila>> fotos = repo.fotos(filas.stream().map(ResenaFila::id).toList(), !privado).stream()
                 .collect(Collectors.groupingBy(FotoFila::resenaId));
         List<ResenaDto> r = new ArrayList<>();
@@ -294,7 +296,8 @@ public class ResenaServicio {
             RespuestaResenaDto resp = f.respuestaTexto() == null ? null
                     : new RespuestaResenaDto(f.respuestaTexto(), f.respuestaCreadoEn(), f.respuestaActualizadoEn());
             r.add(new ResenaDto(f.id(), f.calificacion(), f.titulo(), f.texto(), f.fechaVisita(),
-                    Nombres.corto(f.autorNombre()), f.creadoEn(), f.utiles(), privado ? f.estado() : null, fs, resp));
+                    Nombres.corto(f.autorNombre()), f.creadoEn(), f.utiles(), privado ? f.estado() : null, fs, resp,
+                    privado || (usuarioId != null && usuarioId.equals(f.usuarioId())), utiles.contains(f.id())));
         }
         return r;
     }

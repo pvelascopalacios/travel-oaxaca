@@ -17,11 +17,12 @@ public class ResenaRepositorio {
                              OffsetDateTime respuestaActualizadoEn) {
     }
 
-    public record FotoFila(UUID resenaId, UUID medioId, String claveAlmacenamiento, String moderacion) {
+    public record MiResenaFila(UUID id, UUID negocioId, String negocioSlug, String negocioNombre, int calificacion,
+                               String titulo, String texto, LocalDate fechaVisita, String estado, int utiles,
+                               OffsetDateTime creadoEn) {
     }
 
-    public record NegocioDeResena(UUID resenaId, UUID negocioId, String slug, String nombre, String categoriaClave,
-                                  String municipioNombre) {
+    public record FotoFila(UUID resenaId, UUID medioId, String claveAlmacenamiento, String moderacion) {
     }
 
     public record DistribucionFila(int calificacion, int total) {
@@ -108,27 +109,17 @@ public class ResenaRepositorio {
                 .param("n", negocioId).param("u", usuarioId).query(ResenaFila.class).optional();
     }
 
-    /** Todas las reseñas de una persona, las más recientes primero (incluye las pendientes). */
-    public List<ResenaFila> deUsuarioTodas(UUID usuarioId) {
-        return jdbc.sql(SELECT + " WHERE r.usuario_id = :u AND r.eliminado_en IS NULL ORDER BY r.creado_en DESC")
-                .param("u", usuarioId).query(ResenaFila.class).list();
-    }
-
-    /** Nombre, categoría y municipio de los negocios de esas reseñas. */
-    public List<NegocioDeResena> negociosDeResenas(List<UUID> resenaIds) {
-        if (resenaIds.isEmpty()) {
-            return List.of();
-        }
+    /** Todas las reseñas de una persona (de la más reciente a la más antigua) con el negocio al que pertenecen. */
+    public List<MiResenaFila> deUsuarioTodas(UUID usuarioId) {
         return jdbc.sql("""
-                SELECT r.id AS resena_id, n.id AS negocio_id, n.slug, n.nombre_comercial AS nombre,
-                       c.clave AS categoria_clave, mu.nombre AS municipio_nombre
-                FROM resena r
-                JOIN negocio n ON n.id = r.negocio_id
-                JOIN categoria c ON c.id = n.categoria_id
-                LEFT JOIN sucursal sp ON sp.negocio_id = n.id AND sp.es_principal AND sp.eliminado_en IS NULL
-                LEFT JOIN municipio mu ON mu.id = sp.municipio_id
-                WHERE r.id IN (:ids)""")
-                .param("ids", resenaIds).query(NegocioDeResena.class).list();
+                SELECT r.id, r.negocio_id, n.slug AS negocio_slug, n.nombre_comercial AS negocio_nombre, r.calificacion,
+                       r.titulo, r.texto, r.fecha_visita, r.estado,
+                       CAST((SELECT count(*) FROM reaccion x WHERE x.resena_id = r.id AND x.tipo = 'util') AS integer) AS utiles,
+                       r.creado_en
+                FROM resena r JOIN negocio n ON n.id = r.negocio_id
+                WHERE r.usuario_id = :u AND r.eliminado_en IS NULL AND n.eliminado_en IS NULL
+                ORDER BY r.creado_en DESC, r.id""")
+                .param("u", usuarioId).query(MiResenaFila.class).list();
     }
 
     /** Fotos de varias reseñas. soloAprobadas = true para el público. */

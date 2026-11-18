@@ -43,15 +43,16 @@ public class ResenaController {
 
     @Operation(summary = "Reseñas publicadas de un negocio con su calificación (orden: recientes, mejor, peor, utiles)")
     @GetMapping("/api/v1/publico/negocios/{slug}/resenas")
-    public ApiResponse<ResenasPublicasDto> publicas(@PathVariable String slug,
+    public ApiResponse<ResenasPublicasDto> publicas(@AuthenticationPrincipal Jwt jwt, @PathVariable String slug,
                                                     @RequestParam(required = false) String destino,
                                                     @RequestParam(required = false) String orden,
                                                     @RequestParam(required = false) Integer pagina,
                                                     @RequestParam(required = false) Integer tamano) {
-        return ApiResponses.ok(servicio.publicas(slug, destino, orden, pagina, tamano));
+        return ApiResponses.ok(servicio.publicas(slug, destino, orden, pagina, tamano,
+                jwt == null ? null : Actor.de(jwt).usuarioId()));
     }
 
-    @Operation(summary = "Todas mis reseñas (con su estado y el negocio de cada una)")
+    @Operation(summary = "Todas mis reseñas, de la más reciente a la más antigua (con el negocio y el estado de cada una)")
     @GetMapping("/api/v1/mi/resenas")
     public ApiResponse<List<MiResenaDto>> mias(@AuthenticationPrincipal Jwt jwt) {
         return ApiResponses.ok(servicio.mias(Actor.de(jwt).usuarioId()));

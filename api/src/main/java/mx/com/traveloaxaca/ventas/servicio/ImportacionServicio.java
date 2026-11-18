@@ -44,7 +44,8 @@ public class ImportacionServicio {
     static final int MAX_BYTES = 2 * 1024 * 1024;
     static final int MAX_ERRORES_GUARDADOS = 500;
     static final List<String> TIPOS = List.of("prospectos", "negocios", "lugares", "eventos");
-    private static final Set<String> TIPOS_LUGAR = Set.of("arqueologico", "natural", "cultural", "playa", "mercado", "templo", "otro");
+    private static final Set<String> TIPOS_LUGAR = Set.of("arqueologico", "natural", "cultural", "playa", "mercado", "templo", "otro",
+            "bosque", "mirador", "cascada", "presa");
 
     private static final Map<String, List<String>> REQUERIDAS = Map.of(
             "prospectos", List.of("nombre_negocio"),

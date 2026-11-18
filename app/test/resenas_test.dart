@@ -45,4 +45,25 @@ void main() {
     expect(m.negocioSlug, 'casa-azul');
     expect(ResenaPropia.desdeJson({'id': 'a', 'calificacion': 2, 'estado': 'rechazada'}).noPublicada, isTrue);
   });
+
+  test('MiResena lee la respuesta plana de GET /mi/resenas', () {
+    final m = MiResena.desdeJson({
+      'id': 'r1',
+      'negocioId': 'n1',
+      'negocioSlug': 'casa-azul',
+      'negocioNombre': 'Casa Azul',
+      'calificacion': 5,
+      'titulo': 'Excelente',
+      'texto': 'x' * 25,
+      'fechaVisita': '2026-11-01',
+      'estado': 'publicada',
+      'utiles': 3,
+      'creadoEn': '2026-11-02T10:00:00Z',
+    });
+    expect(m.resena.id, 'r1');
+    expect(m.resena.calificacion, 5);
+    expect(m.resena.fechaVisita, DateTime(2026, 11, 1));
+    expect(m.negocioNombre, 'Casa Azul');
+    expect(m.municipioNombre, isNull);
+  });
 }
