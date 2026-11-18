@@ -1,0 +1,125 @@
+@if (cargando() && !ficha()) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else if (ficha(); as n) {
+  <app-cabecera-opciones [id]="id()" [nombre]="n.nombreComercial" [estado]="n.estado" [raiz]="raiz()" activa="opciones" />
+
+  @if (n.estado === 'en_revision') {
+    <p class="aviso ambar" role="status"><strong>Tu ficha está en revisión.</strong> Las opciones no se pueden cambiar hasta que el equipo la apruebe o te pida cambios.</p>
+  } @else if (n.estado === 'archivada') {
+    <p class="aviso ambar" role="status">Este negocio está archivado y ya no se puede editar.</p>
+  }
+
+  @if (editando(); as e) {
+    <app-form-opcion [negocioId]="id()" [tipos]="tipos()" [oferta]="e.oferta" [ordenNuevo]="ordenNuevo()" (guardada)="alGuardar($event)" (cancelar)="editando.set(null)" />
+  } @else if (tipos().length === 0 && raiz()) {
+    <section class="tarjeta"><h2>{{ titulo() }}</h2><p class="suave">Este tipo de negocio no usa opciones con precio. Con la ficha y las fotos es suficiente.</p></section>
+  } @else {
+    <section class="tarjeta" [attr.aria-label]="titulo()">
+      <div class="fila-cab">
+        <h2>{{ titulo() }}</h2>
+        @if (plan(); as p) { <span class="etiqueta">Plan {{ p.plan.nombre }}</span> }
+        @if (puedeAgregar()) { <button type="button" class="boton" (click)="nueva()">+ {{ textoAgregar() }}</button> }
+      </div>
+
+      @if (cupo().sinPlan) {
+        <div class="candado">
+          <h3>Tu plan {{ plan()?.plan?.nombre }} no incluye {{ titulo().toLowerCase() }}</h3>
+          <p>Con un plan de pago tus clientes ven {{ titulo() === 'Menú' ? 'los platillos' : 'tus opciones' }}, los precios y los detalles en tu ficha.</p>
+          <p class="suave chico">Mira qué incluye cada plan en «Plan y pagos».</p>
+        </div>
+      } @else {
+        <div class="medidor">
+          <div class="fila-cab">
+            <strong>{{ cupo().usadas }} de {{ cupo().limite }} opciones</strong>
+            <span class="suave chico">Las archivadas no cuentan</span>
+          </div>
+          <div class="barra" role="img" [attr.aria-label]="cupo().usadas + ' de ' + cupo().limite + ' opciones'"><i [class.lleno]="cupo().lleno" [style.width.%]="porcentaje()"></i></div>
+        </div>
+        @if (cupo().lleno && !soloLectura()) {
+          <p class="aviso ambar" role="status">Llegaste al máximo de {{ cupo().limite }} opciones{{ plan() ? ' de tu plan ' + plan()?.plan?.nombre : '' }}. Archiva o elimina una para agregar otra.</p>
+        }
+      }
+
+      @if (aviso(); as a) { <p class="aviso ok" role="status">{{ a }}</p> }
+      @if (error(); as m) { <p class="aviso" role="alert">{{ m }}</p> }
+
+      @for (g of lista().grupos; track g.clave) {
+        <div class="secc">
+          @if (g.texto) { <h3>{{ g.texto }} <span>{{ g.ofertas.length }}</span></h3> }
+          <ul>
+            @for (o of g.ofertas; track o.id; let i = $index; let ultimo = $last) {
+              <li class="op" [class.ocupada]="trabajandoId() === o.id">
+                <div class="info">
+                  <h4>{{ nombreDe(o) }}</h4>
+                  @if (o.traducciones?.['es']?.descripcion; as d) { <p>{{ d }}</p> }
+                  <div class="meta">
+                    <span class="estado" [class]="estadoInfo(o.estado).clase">{{ estadoInfo(o.estado).texto }}</span>
+                    @if (o.tipo !== 'platillo') { <span class="etiqueta">{{ nombreTipo(o.tipo) }}</span> }
+                    @if (o.duracionMin) { <span class="etiqueta">{{ duracion(o.duracionMin) }}</span> }
+                    @if (o.capacidad) { <span class="etiqueta">{{ o.capacidad }} {{ o.capacidad === 1 ? 'persona' : 'personas' }}</span> }
+                    @for (m of o.etiquetas ?? []; track m) { <span class="marca" [class.pic]="m === 'picante'">{{ marca(m) }}</span> }
+                  </div>
+                </div>
+                @if (precio(o); as p) { <div class="precio">{{ p.precio }}<small>{{ p.unidad }}</small></div> }
+                @if (!soloLectura()) {
+                  @if (confirmandoId() === o.id) {
+                    <div class="confirma" role="alertdialog" aria-live="assertive">
+                      <p><strong>¿Eliminar «{{ nombreDe(o) }}»?</strong> No se puede deshacer. Si solo quieres ocultarla, mejor archívala.</p>
+                      <div class="fila">
+                        <button type="button" class="mini-b mal" [disabled]="trabajandoId() === o.id" (click)="eliminar(o)">{{ trabajandoId() === o.id ? 'Eliminando…' : 'Sí, eliminar' }}</button>
+                        <button type="button" class="mini-b" (click)="confirmandoId.set(null)">No</button>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="acc">
+                      @if (g.ofertas.length > 1) {
+                        <span class="orden">
+                          <button type="button" class="mini-b" [disabled]="i === 0 || !!trabajandoId()" (click)="mover(g, o, -1)" [attr.aria-label]="'Subir ' + nombreDe(o)">↑</button>
+                          <button type="button" class="mini-b" [disabled]="ultimo || !!trabajandoId()" (click)="mover(g, o, 1)" [attr.aria-label]="'Bajar ' + nombreDe(o)">↓</button>
+                        </span>
+                      }
+                      <button type="button" class="mini-b ed" [disabled]="!!trabajandoId()" (click)="cambiar(o)">Editar</button>
+                      <details class="mas-op">
+                        <summary class="mini-b" aria-label="Más acciones">⋯</summary>
+                        <div class="mas-l">
+                          @if (accion(o.estado); as a) { <button type="button" class="mini-b" [disabled]="!!trabajandoId()" (click)="cambiarEstado(o, a.destino)">{{ a.texto }}</button> }
+                          <button type="button" class="mini-b" [disabled]="!!trabajandoId()" (click)="cambiarEstado(o, 'archivada')">Archivar</button>
+                          <button type="button" class="mini-b mal" [disabled]="!!trabajandoId()" (click)="pedirEliminar(o.id)">Eliminar</button>
+                        </div>
+                      </details>
+                    </div>
+                  }
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      } @empty {
+        @if (!cupo().sinPlan) { <p class="vacio">Todavía no tienes {{ titulo().toLowerCase() }}. @if (puedeAgregar()) { Pulsa «{{ textoAgregar() }}» para empezar. }</p> }
+      }
+
+      @if (lista().archivadas.length) {
+        <details class="archivadas">
+          <summary>Archivadas ({{ lista().archivadas.length }})</summary>
+          <ul>
+            @for (o of lista().archivadas; track o.id) {
+              <li class="op">
+                <div class="info"><h4>{{ nombreDe(o) }}</h4></div>
+                @if (!soloLectura()) {
+                  <div class="acc">
+                    <button type="button" class="mini-b" [disabled]="!!trabajandoId()" (click)="cambiarEstado(o, 'borrador')">Restaurar como borrador</button>
+                    <button type="button" class="mini-b mal" [disabled]="!!trabajandoId()" (click)="eliminar(o)">Eliminar</button>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
+        </details>
+      }
+
+      <p class="suave chico">Solo las opciones «publicadas» se ven en el sitio. «Borrador» y «pausada» quedan ocultas. Las flechas cambian el orden dentro de cada grupo.</p>
+    </section>
+  }
+}

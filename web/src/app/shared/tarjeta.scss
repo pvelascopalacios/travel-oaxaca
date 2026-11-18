@@ -1,0 +1,161 @@
+:host {
+  display: block;
+}
+
+.tarjeta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--papel);
+  border-radius: var(--radio);
+  overflow: hidden;
+  text-decoration: none;
+  box-shadow: var(--sombra);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--sombra-fuerte);
+  }
+}
+
+.foto {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--cantera);
+}
+
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 14px 16px 17px;
+  min-width: 0;
+}
+
+h3 {
+  font-size: 1.1rem;
+  overflow-wrap: anywhere;
+}
+
+.categoria,
+.suave {
+  color: var(--tinta-suave);
+  font-size: 0.875rem;
+}
+
+.calificacion {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.95rem;
+}
+
+.estrella {
+  color: var(--ocre);
+}
+
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 10px;
+}
+
+.estado {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--tinta-suave);
+
+  &.abierto {
+    color: var(--sierra);
+  }
+}
+
+.sello {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--papel);
+
+  &.verificado {
+    left: auto;
+    right: 10px;
+    color: var(--sierra);
+    box-shadow: var(--sombra);
+  }
+
+  &.patrocinado {
+    background: var(--ocre);
+    color: var(--noche);
+  }
+}
+
+.fecha {
+  display: inline-grid;
+  place-items: center;
+  align-content: center;
+  flex: none;
+  width: 58px;
+  min-height: 58px;
+  border-radius: 14px;
+  background: var(--noche);
+  color: #fff;
+  font-family: var(--fuente-titulo);
+  line-height: 1.1;
+  text-align: center;
+
+  strong {
+    font-size: 1.4rem;
+  }
+
+  span {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+}
+
+.evento {
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+}
+
+.servicios {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin: 2px 0 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+
+  li {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 2px 10px;
+    border: 1px solid var(--linea);
+    border-radius: 999px;
+    background: var(--cantera);
+    color: var(--tinta);
+    font-size: 0.76rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .resaltada {
+    border-color: var(--grana);
+    background: color-mix(in srgb, var(--grana) 10%, var(--papel));
+    color: var(--grana);
+    font-weight: 600;
+  }
+}

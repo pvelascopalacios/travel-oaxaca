@@ -1,0 +1,4 @@
+@use '../comun';
+.motivo { min-width: 220px; max-width: 420px; overflow-wrap: anywhere; }
+.enlace-b { display: inline-flex; align-items: center; text-decoration: none; }
+.enlace-b.inactivo { opacity: 0.4; pointer-events: none; }

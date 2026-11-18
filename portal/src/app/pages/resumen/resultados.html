@@ -1,0 +1,83 @@
+<section class="resultados" aria-label="Resultados">
+  <div class="fila-cab">
+    <h2>Resultados</h2>
+    @if (datos() && !datos()!.limitado) {
+      <div class="periodos" role="group" aria-label="Periodo">
+        @for (p of periodos; track p) {
+          <button type="button" [attr.aria-pressed]="datos()!.dias === p" (click)="cargar(p)">{{ p }} días</button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (error(); as e) {
+    <p class="aviso" role="alert">{{ e }} <button type="button" class="enlace" (click)="cargar(datos()?.dias)">Reintentar</button></p>
+  }
+
+  @if (cargando() && !datos()) {
+    <p class="carga" aria-live="polite">Cargando resultados…</p>
+  } @else if (datos(); as d) {
+    <p class="suave chico" aria-live="polite">
+      {{ rango() }}@if (!d.limitado) { · comparado con el periodo anterior }
+    </p>
+
+    <div class="cifras" [class.cargando]="cargando()">
+      <div class="cifra">
+        <b>{{ numero(d.actual.vistas) }}</b><span>Vistas de tu ficha</span>
+        @if (dVistas() !== null) { <em class="delta" [class.baja]="dVistas()! < 0">{{ flecha(dVistas()!) }} % vs. periodo anterior</em> }
+      </div>
+      <div class="cifra">
+        <b>{{ numero(d.actual.contactos) }}</b><span>Contactos</span>
+        @if (dContactos() !== null) { <em class="delta" [class.baja]="dContactos()! < 0">{{ flecha(dContactos()!) }} %</em> }
+      </div>
+      @if (!d.limitado && d.actual.tasaContacto !== null) {
+        <div class="cifra">
+          <b>{{ d.actual.tasaContacto }} %</b><span>De vista a contacto</span>
+          @if (dTasa() !== null) { <em class="delta" [class.baja]="dTasa()! < 0">{{ flecha(dTasa()!) }} pts</em> }
+        </div>
+      }
+    </div>
+
+    @if (d.limitado) {
+      <div class="limitado">
+        <p><strong>Tu plan Gratis muestra los totales de la última semana.</strong><br />Con un plan de pago ves la comparación con el periodo anterior, el día por día y de dónde llegan tus visitas.</p>
+      </div>
+    } @else if (sinVisitas()) {
+      <p class="tarjeta suave">Todavía no hay visitas en este periodo. Cuando las haya, aquí verás qué hacen y de dónde llegan.</p>
+    } @else {
+      @if (trazo(); as t) {
+        <div class="tarjeta">
+          <h3>Día por día</h3>
+          <svg class="grafica" [attr.viewBox]="'0 0 ' + ancho + ' ' + alto" preserveAspectRatio="none" role="img" aria-label="Vistas y contactos por día">
+            <line x1="0" [attr.x2]="ancho" [attr.y1]="alto - 8" [attr.y2]="alto - 8" stroke="var(--linea)" />
+            <polyline fill="none" stroke="var(--laguna)" stroke-width="2.5" stroke-linejoin="round" vector-effect="non-scaling-stroke" [attr.points]="t.vistas" />
+            <polyline fill="none" stroke="var(--grana)" stroke-width="2.5" stroke-linejoin="round" vector-effect="non-scaling-stroke" [attr.points]="t.contactos" />
+          </svg>
+          <div class="ejes"><span>{{ dia(t.desde) }}</span><span>máximo {{ numero(t.maximo) }} por día</span><span>{{ dia(t.hasta) }}</span></div>
+          <div class="leyenda"><span><i class="v"></i>Vistas</span><span><i class="c"></i>Contactos</span></div>
+        </div>
+      }
+
+      @if (acciones().length) {
+        <div class="tarjeta">
+          <h3>Qué hicieron</h3>
+          <div class="tabla"><table>
+            <thead><tr><th scope="col">Acción</th><th scope="col">Veces</th></tr></thead>
+            <tbody>@for (a of acciones(); track a.tipo) { <tr><td>{{ a.nombre }}</td><td>{{ numero(a.total) }}</td></tr> }</tbody>
+          </table></div>
+        </div>
+      }
+
+      @if (d.porOrigen?.length) {
+        <div class="tarjeta">
+          <h3>De dónde llegaron</h3>
+          <div class="tabla"><table>
+            <thead><tr><th scope="col">Origen</th><th scope="col">Vistas</th><th scope="col">Contactos</th></tr></thead>
+            <tbody>@for (o of d.porOrigen; track o.clave) { <tr><td>{{ o.nombre || origenes[o.clave] || o.clave }}</td><td>{{ numero(o.vistas) }}</td><td>{{ numero(o.contactos) }}</td></tr> }</tbody>
+          </table></div>
+        </div>
+      }
+      <p class="suave chico">Contactos = toques de WhatsApp, llamadas, «cómo llegar» y guardados.</p>
+    }
+  }
+</section>

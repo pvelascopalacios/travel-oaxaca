@@ -1,0 +1,15 @@
+.resenas { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.resena { display: grid; gap: 6px; padding: 16px 18px; border-radius: var(--radio); background: var(--papel); box-shadow: var(--sombra); min-width: 0;
+  p { overflow-wrap: anywhere; } }
+.arriba { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.negocio { color: var(--tinta); font: 700 1.05rem var(--fuente-titulo); text-decoration: none; &:hover { color: var(--grana); } }
+.estrellas { display: flex; gap: 2px; color: var(--linea); font-size: 1.1rem; .llena { color: var(--ocre); } }
+.titulo-r { font-weight: 700; }
+.estado { padding: 3px 12px; border-radius: 999px; background: var(--cantera); font-size: 0.8rem; font-weight: 700;
+  &.ok { background: rgb(65 105 47 / 12%); color: var(--sierra); }
+  &.espera { background: #fff3d6; color: #8a5a00; }
+  &.no { background: #fdf0f4; color: var(--grana); } }
+.acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 4px; }
+.chico { min-height: 40px; padding-inline: 16px; }
+.peligro { color: #b3261e; border-color: #b3261e; }
+.peligroso { background: #b3261e; }

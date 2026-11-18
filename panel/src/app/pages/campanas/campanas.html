@@ -1,0 +1,59 @@
+<header class="cab fila-cab">
+  <div>
+    <h1>Campañas</h1>
+    <p class="suave chico">Cada campaña tiene un código que se pone en los enlaces (<code>?o=codigo</code>). Las vistas y contactos de abajo vienen de quienes llegaron con ese código.</p>
+  </div>
+  <button type="button" class="mini-b ok" (click)="nueva()">+ Nueva campaña</button>
+</header>
+
+@if (aviso(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+
+@if (editando(); as ed) {
+  <form class="tarjeta" (ngSubmit)="guardar()" novalidate>
+    <h2>{{ ed === 'nueva' ? 'Nueva campaña' : 'Editar campaña' }}</h2>
+    <div class="rejilla">
+      <label [class.error]="errores()['origen']">Origen *
+        <select name="origen" [(ngModel)]="form.origen"><option value="">Elige…</option>@for (o of origenes(); track o.clave) { <option [value]="o.clave">{{ o.nombre }}</option> }</select>
+        @if (errores()['origen']; as m) { <span class="msg">{{ m }}</span> }
+      </label>
+      <label [class.error]="errores()['codigo']">Código * <span class="ayuda">(2 a 40: minúsculas, números, - y _)</span>
+        <input name="codigo" autocomplete="off" maxlength="45" [disabled]="ed !== 'nueva'" [(ngModel)]="form.codigo" />
+        @if (errores()['codigo']; as m) { <span class="msg">{{ m }}</span> }
+        @if (ed !== 'nueva') { <span class="ayuda">El código no se puede cambiar: ya está en enlaces publicados.</span> }
+      </label>
+    </div>
+    <label [class.error]="errores()['nombre']">Nombre * <input name="nombre" maxlength="130" [(ngModel)]="form.nombre" />@if (errores()['nombre']; as m) { <span class="msg">{{ m }}</span> }</label>
+    <div class="rejilla">
+      <label>Inicio <input type="date" name="inicio" [(ngModel)]="form.inicio" /></label>
+      <label [class.error]="errores()['fin']">Fin <input type="date" name="fin" [(ngModel)]="form.fin" />@if (errores()['fin']; as m) { <span class="msg">{{ m }}</span> }</label>
+    </div>
+    @if (form.codigo.trim()) { <p class="nota">Enlace de ejemplo: <code>{{ enlace(form.codigo.trim()) }}</code></p> }
+    @if (errorApi(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+    <div class="barra-guardar">
+      <button type="submit" class="mini-b ok" [disabled]="trabajando()">{{ trabajando() ? 'Guardando…' : 'Guardar campaña' }}</button>
+      <button type="button" class="mini-b" [disabled]="trabajando()" (click)="editando.set(null)">Cancelar</button>
+    </div>
+  </form>
+}
+
+@if (lista() === null && !fallo()) { <p class="carga" aria-live="polite">Cargando…</p> }
+@else if (fallo(); as f) { <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p> }
+@else if (lista()!.length === 0) { <p class="vacio">Aún no hay campañas.</p> }
+@else {
+  <div class="tarjeta tabla">
+    <table>
+      <thead><tr><th>Campaña</th><th>Origen</th><th>Periodo</th><th class="num">Vistas</th><th class="num">Contactos</th><th></th></tr></thead>
+      <tbody>
+        @for (c of lista(); track c.id) {
+          <tr>
+            <td class="wrap"><b>{{ c.nombre }}</b><br><span class="chico suave">{{ c.codigo }}</span></td>
+            <td>{{ c.origenNombre }}</td>
+            <td>{{ c.inicio ? fecha(c.inicio) : 'Sin inicio' }} – {{ c.fin ? fecha(c.fin) : 'Sin fin' }}</td>
+            <td class="num">{{ c.vistas }}</td><td class="num">{{ c.contactos }}</td>
+            <td class="nw"><button type="button" class="mini" (click)="copiar(c.codigo)">{{ copiado() === c.codigo ? 'Copiado' : 'Copiar enlace' }}</button><button type="button" class="mini" (click)="editar(c)">Editar</button></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

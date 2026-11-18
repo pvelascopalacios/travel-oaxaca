@@ -1,0 +1,7 @@
+@use '../comun';
+.usos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.uso { display: grid; gap: 6px; min-width: 0; }
+.incluye, .plan ul { display: grid; gap: 4px; font-size: 0.9rem; li::before { content: '✓ '; color: var(--sierra); font-weight: 700; } li.no { color: var(--suave); text-decoration: line-through; } li.no::before { content: '— '; color: var(--suave); } }
+.planes { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.plan { border: 1.5px solid var(--linea); border-radius: 14px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0; h3 { margin: 0; font: 700 1.05rem var(--fuente-titulo); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; } &.actual { border-color: var(--grana); background: var(--aviso); } .precio { margin: 0; font: 800 1.4rem var(--fuente-titulo); small { font: 400 0.8rem var(--fuente); color: var(--suave); } } }
+.cambio { display: grid; gap: 6px; padding: 14px; border-radius: 12px; background: var(--cantera); p { margin: 0; } }

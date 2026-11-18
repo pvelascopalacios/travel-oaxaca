@@ -1,0 +1,47 @@
+<div class="contenedor pagina">
+  @if (noExiste()) {
+    <app-no-existe />
+  } @else if (fallo()) {
+    <div class="tarjeta">
+      <p class="aviso" role="alert">{{ i18n.t('errorCarga') }}</p>
+      <button type="button" class="boton secundario" (click)="cargar()">{{ i18n.t('perfilReintentar') }}</button>
+    </div>
+  } @else if (lista(); as l) {
+    <header class="tarjeta cab-lista">
+      <div class="titulo">
+        <h1>{{ l.nombre }}</h1>
+        <p class="suave">{{ resumen(l) }}</p>
+      </div>
+      <a class="boton chico" [routerLink]="['/', i18n.lang(), 'listas']">{{ i18n.t('listaCrearPropia') }}</a>
+    </header>
+
+    @if (l.elementos.length === 0) {
+      <div class="tarjeta"><p class="suave">{{ i18n.t('listaSinElementos') }}</p></div>
+    } @else {
+      @for (g of grupos(); track g.dia) {
+        @if (g.elementos.length) {
+          <section class="dia" [attr.aria-label]="tituloDia(g)">
+            @if (l.esItinerario) {
+              <h2>{{ tituloDia(g) }} @if (fechaDia(g); as f) { <span class="suave fecha">{{ f }}</span> }</h2>
+            }
+            <ul class="elementos">
+              @for (e of g.elementos; track e.itemId) {
+                <li class="el solo-lectura">
+                  <a class="foto" [routerLink]="enlaceElemento(e)" [attr.aria-label]="e.nombre"><app-imagen [url]="e.imagenUrl" [texto]="e.nombre" /></a>
+                  <div class="datos">
+                    <a class="nombre" [routerLink]="enlaceElemento(e)">{{ e.nombre }}</a>
+                    <span class="suave pequeno">{{ i18n.t(tipo(e)) }}</span>
+                    @if (e.nota) { <p class="nota">«{{ e.nota }}»</p> }
+                  </div>
+                  <a class="boton secundario chico" [routerLink]="enlaceElemento(e)">{{ i18n.t('listaVer') }}</a>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+      }
+    }
+  } @else {
+    <p class="suave" aria-live="polite">{{ i18n.t('cargando') }}</p>
+  }
+</div>

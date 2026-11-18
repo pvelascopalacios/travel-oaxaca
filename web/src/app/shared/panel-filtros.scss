@@ -1,0 +1,80 @@
+:host {
+  display: block;
+}
+
+.panel {
+  display: grid;
+  gap: 6px;
+}
+
+fieldset {
+  border: 0;
+  margin: 0;
+  padding: 14px 0 6px;
+  min-width: 0;
+  border-top: 1px solid var(--linea);
+
+  &:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+}
+
+legend {
+  padding: 0;
+  margin-bottom: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+.opcion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  cursor: pointer;
+
+  input {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    flex: none;
+    accent-color: var(--grana);
+  }
+
+  .texto {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .cuenta {
+    color: var(--tinta-suave);
+    font-size: 0.85rem;
+  }
+}
+
+.precios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.precio {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--linea);
+  background: var(--papel);
+  font-weight: 600;
+  cursor: pointer;
+
+  &.activo {
+    border-color: var(--noche);
+    background: var(--noche);
+    color: #fff;
+  }
+}

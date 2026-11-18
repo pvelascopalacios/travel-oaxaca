@@ -1,0 +1,3 @@
+@use '../comun';
+.chips-neg { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag-neg { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 6px 0 12px; border-radius: 999px; background: var(--cantera); font-weight: 600; font-size: 0.86rem; }

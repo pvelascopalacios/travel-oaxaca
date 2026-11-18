@@ -1,0 +1,41 @@
+<div class="portal">
+  <aside class="lado" aria-label="Menú del portal">
+    <div class="marca">
+      <img src="logo-emblema.png" alt="" width="32" height="32" />
+      <span>Travel Oaxaca<small>Portal del negocio</small></span>
+    </div>
+    @if (negocioId()) {
+      <a class="volver" routerLink="/negocios">← Mis negocios</a>
+    }
+    <nav>
+      @for (e of enlaces(); track e.texto) {
+        @if (e.ruta) {
+          <a [routerLink]="e.ruta" [class.activo]="esActivo(e)" [attr.aria-current]="esActivo(e) ? 'page' : null">{{ e.texto }}</a>
+        } @else {
+          <span class="deshabilitado" aria-disabled="true">{{ e.texto }} <small>Próximamente</small></span>
+        }
+      }
+    </nav>
+    <div class="yo">
+      <strong>{{ sesion.usuario()?.nombre }}</strong>
+      <span>{{ sesion.usuario()?.correo }}</span>
+      <button type="button" class="salir" (click)="salir()">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <nav class="barra-movil" aria-label="Menú del portal">
+    @if (negocioId()) {
+      <a routerLink="/negocios">← Mis negocios</a>
+    }
+    @for (e of enlaces(); track e.texto) {
+      @if (e.ruta) {
+        <a [routerLink]="e.ruta" [class.activo]="esActivo(e)" [attr.aria-current]="esActivo(e) ? 'page' : null">{{ e.texto }}</a>
+      }
+    }
+    <button type="button" (click)="salir()">Cerrar sesión</button>
+  </nav>
+
+  <main class="contenido">
+    <router-outlet />
+  </main>
+</div>

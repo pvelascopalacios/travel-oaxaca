@@ -1,0 +1,142 @@
+<a class="volver" routerLink="/prospectos">← Prospectos</a>
+
+@if (cargando()) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }}</p>
+} @else {
+  <header class="cab fila-cab">
+    <div>
+      <h1>{{ nuevo() ? 'Nuevo prospecto' : p()?.nombreNegocio }}</h1>
+      @if (p(); as pp) {
+        <div class="meta">
+          <span class="st" [class]="estadoInfo(pp.estado).clase">{{ estadoInfo(pp.estado).texto }}</span>
+          @if (pp.vencida) { <span class="st urg">Acción vencida</span> }
+          @if (pp.negocioId) { <a class="tag" [routerLink]="['/negocios', pp.negocioId]">Ver el negocio</a> }
+        </div>
+      }
+    </div>
+  </header>
+  @if (aviso(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+  @if (detalle()?.motivoDescarte; as m) { <p class="aviso ambar">Descartado: {{ m }}</p> }
+
+  <div class="cols">
+    <form class="tarjeta" (ngSubmit)="guardar()" novalidate>
+      <h2>Datos</h2>
+      <div class="rejilla">
+        <label [class.error]="errores()['nombreNegocio']">Nombre del negocio * <span class="ayuda">(hasta 160)</span>
+          <input name="nombreNegocio" maxlength="170" [(ngModel)]="form.nombreNegocio" />@if (errores()['nombreNegocio']; as m) { <span class="msg">{{ m }}</span> }
+        </label>
+        <label>Origen
+          <select name="origen" [(ngModel)]="form.origen">@for (o of origenes; track o.clave) { <option [value]="o.clave">{{ o.texto }}</option> }</select>
+        </label>
+        <label>Categoría
+          <select name="categoriaId" [(ngModel)]="form.categoriaId"><option value="">— Sin categoría</option>@for (c of categorias(); track c.id) { <option [value]="c.id">{{ c.etiqueta }}</option> }</select>
+        </label>
+        <app-selector-municipio titulo="Municipio" [valor]="form.municipioId || null" (cambio)="elegirMunicipio($event)" />
+        <label [class.error]="errores()['contactoNombre']">Contacto <input name="contactoNombre" maxlength="130" [(ngModel)]="form.contactoNombre" />@if (errores()['contactoNombre']; as m) { <span class="msg">{{ m }}</span> }</label>
+        <label [class.error]="errores()['telefono']">Teléfono <input name="telefono" inputmode="tel" maxlength="35" [(ngModel)]="form.telefono" />@if (errores()['telefono']; as m) { <span class="msg">{{ m }}</span> }</label>
+        <label [class.error]="errores()['correo']">Correo <input name="correo" type="email" maxlength="170" [(ngModel)]="form.correo" />@if (errores()['correo']; as m) { <span class="msg">{{ m }}</span> }</label>
+        <label>Responsable
+          <select name="asignadoA" [(ngModel)]="form.asignadoA"><option value="">— Sin asignar</option>@for (e of equipo(); track e.id) { <option [value]="e.id">{{ e.nombre }}</option> }</select>
+        </label>
+        <label [class.error]="errores()['proximaAccionEn']">Próxima acción <input name="proximaAccionEn" type="date" [(ngModel)]="form.proximaAccionEn" />@if (errores()['proximaAccionEn']; as m) { <span class="msg">{{ m }}</span> }</label>
+      </div>
+      <label [class.error]="errores()['notas']">Notas <span class="ayuda">(hasta 2000)</span>
+        <textarea name="notas" rows="3" [(ngModel)]="form.notas"></textarea>@if (errores()['notas']; as m) { <span class="msg">{{ m }}</span> }
+      </label>
+      @if (errorApi(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+      <div class="barra-guardar">
+        <button type="submit" class="mini-b ok" [disabled]="trabajando()">{{ trabajando() ? 'Guardando…' : nuevo() ? 'Crear prospecto' : 'Guardar datos' }}</button>
+        <a class="mini-b enlace-b" routerLink="/prospectos">Cancelar</a>
+      </div>
+    </form>
+
+    @if (!nuevo()) {
+      <div class="lateral">
+        <div class="tarjeta">
+          <h2>Estado</h2>
+          @if (esConvertido()) {
+            <p class="chico suave">Este prospecto ya es un negocio y su estado no cambia.</p>
+          } @else {
+            <div class="acciones">
+              @for (e of siguientes(); track e.clave) {
+                <button type="button" class="mini-b" [class.mal]="e.clave === 'descartado'" [disabled]="trabajando()" (click)="cambiarEstado(e)">{{ e.clave === 'descartado' ? 'Descartar…' : e.texto }}</button>
+              }
+            </div>
+            @if (descartando()) {
+              <form class="caja-motivo" (ngSubmit)="confirmarDescarte()" novalidate>
+                <label [class.error]="errorMotivo()">Motivo del descarte * <span class="ayuda">(hasta {{ motivoMax }})</span>
+                  <input name="motivo" autocomplete="off" [(ngModel)]="motivo" />@if (errorMotivo(); as m) { <span class="msg">{{ m }}</span> }
+                </label>
+                <div class="acciones"><button type="submit" class="mini-b mal" [disabled]="trabajando()">Confirmar descarte</button><button type="button" class="mini-b" (click)="descartando.set(false)">Cancelar</button></div>
+              </form>
+            }
+          }
+        </div>
+
+        @if (!esConvertido() && p()?.estado !== 'descartado') {
+          <div class="tarjeta">
+            <h2>Convertir en negocio</h2>
+            <p class="chico suave">Crea un negocio en borrador (alta asistida) con estos datos. Necesita categoría y municipio.</p>
+            <label [class.error]="erroresConv()['categoriaId']">Categoría *
+              <select name="catConv" [(ngModel)]="catConv"><option value="">Elige la categoría</option>@for (c of categorias(); track c.id) { <option [value]="c.id">{{ c.etiqueta }}</option> }</select>
+              @if (erroresConv()['categoriaId']; as m) { <span class="msg">{{ m }}</span> }
+            </label>
+            <app-selector-municipio titulo="Municipio *" [valor]="munConv || null" [error]="erroresConv()['municipioId'] ?? null" (cambio)="elegirMunicipioConv($event)" />
+            @if (errorConv(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+            <button type="button" class="mini-b ok" [disabled]="trabajando()" (click)="convertir()">Convertir a negocio</button>
+          </div>
+        }
+
+        @if (sePuedeEliminar()) {
+          <div class="tarjeta">
+            <h2>Eliminar</h2>
+            @if (!eliminando()) { <button type="button" class="mini-b mal" (click)="eliminando.set(true)">Eliminar prospecto…</button> }
+            @else {
+              <p class="chico">Se borra el prospecto y su historial. ¿Continuar?</p>
+              <div class="acciones"><button type="button" class="mini-b mal" [disabled]="trabajando()" (click)="eliminar()">Sí, eliminar</button><button type="button" class="mini-b" (click)="eliminando.set(false)">No</button></div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  @if (!nuevo()) {
+    <div class="cols">
+      <form class="tarjeta" (ngSubmit)="registrarContacto()" novalidate>
+        <h2>Registrar contacto</h2>
+        <div class="rejilla">
+          <label>Tipo *
+            <select name="tipo" [(ngModel)]="inter.tipo">@for (t of tiposInter; track t.clave) { <option [value]="t.clave">{{ t.texto }}</option> }</select>
+          </label>
+          <label>Cuándo <span class="ayuda">(vacío = ahora)</span><input name="cuando" type="datetime-local" [(ngModel)]="inter.cuando" /></label>
+        </div>
+        <label [class.error]="erroresInter()['resultado']">Resultado <span class="ayuda">(hasta 300)</span><input name="resultado" maxlength="320" [(ngModel)]="inter.resultado" />@if (erroresInter()['resultado']; as m) { <span class="msg">{{ m }}</span> }</label>
+        <label [class.error]="erroresInter()['notas']">Notas <span class="ayuda">(hasta 2000)</span><textarea name="notasInter" rows="2" [(ngModel)]="inter.notas"></textarea>@if (erroresInter()['notas']; as m) { <span class="msg">{{ m }}</span> }</label>
+        <label [class.error]="erroresInter()['proximaAccionEn']">Próxima acción <span class="ayuda">(hoy o futura)</span><input name="proxInter" type="date" [min]="hoy" [(ngModel)]="inter.proximaAccionEn" />@if (erroresInter()['proximaAccionEn']; as m) { <span class="msg">{{ m }}</span> }</label>
+        @if (errorInter(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+        <div class="barra-guardar"><button type="submit" class="mini-b ok" [disabled]="trabajando()">Guardar contacto</button></div>
+      </form>
+
+      <div class="tarjeta">
+        <h2>Historial</h2>
+        @if ((detalle()?.interacciones ?? []).length === 0) { <p class="vacio">Aún no hay contactos registrados.</p> }
+        <ul class="linea">
+          @for (i of detalle()?.interacciones ?? []; track i.id) {
+            <li>
+              <span class="pt" aria-hidden="true">{{ tipoInfo(i.tipo).corto }}</span>
+              <div>
+                <b>{{ tipoInfo(i.tipo).texto }}</b>@if (i.usuarioNombre) { · {{ i.usuarioNombre }} } <span class="chico suave">{{ fechaHora(i.ocurrioEn) }}</span>
+                @if (i.resultado) { <br>{{ i.resultado }} }
+                @if (i.notas) { <br><span class="suave">{{ i.notas }}</span> }
+                @if (i.proximaAccionEn) { <br><span class="chico suave">Próxima acción: {{ fecha(i.proximaAccionEn) }}</span> }
+              </div>
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+  }
+}

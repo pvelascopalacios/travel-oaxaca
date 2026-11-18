@@ -1,0 +1,40 @@
+<a class="tarjeta" [routerLink]="['/', i18n.lang(), 'negocio', negocio().slug]">
+  <div class="foto">
+    <app-imagen [url]="negocio().portadaUrl" [alt]="negocio().nombre" [texto]="negocio().nombre" />
+    @if (patrocinado()) {
+      <span class="sello patrocinado">{{ i18n.t('patrocinado') }}</span>
+    }
+  </div>
+  <div class="cuerpo">
+    <p class="categoria">{{ negocio().categoriaNombre }} · {{ negocio().municipioNombre }}</p>
+    <h3>{{ negocio().nombre }}</h3>
+    <p class="calificacion">
+      @if (calificacion(); as c) {
+        <span class="estrella" aria-hidden="true">★</span><strong>{{ c }}</strong>
+        <span class="suave">({{ negocio().totalResenas }} {{ i18n.t('resenas') }})</span>
+      } @else {
+        <span class="suave">{{ i18n.t('sinResenas') }}</span>
+      }
+    </p>
+    <p class="fila">
+      @if (precio(); as p) {
+        <span class="precio">{{ i18n.t('desde') }} <strong>{{ p.monto }}</strong>&nbsp;<span class="suave">{{ p.unidad }}</span></span>
+      }
+      @if (negocio().abiertoAhora != null) {
+        <span class="estado" [class.abierto]="negocio().abiertoAhora">
+          {{ negocio().abiertoAhora ? i18n.t('abiertoAhora') : i18n.t('cerradoAhora') }}
+        </span>
+      }
+    </p>
+    @if (etiquetas().length) {
+      <ul class="servicios" [attr.aria-label]="i18n.t('servicios')">
+        @for (e of etiquetas(); track e.clave) {
+          <li [class.resaltada]="e.resaltada">{{ e.nombre }}</li>
+        }
+      </ul>
+    }
+  </div>
+  @if (negocio().verificado) {
+    <span class="sello verificado">✓ {{ i18n.t('verificado') }}</span>
+  }
+</a>

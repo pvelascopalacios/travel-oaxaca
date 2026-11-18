@@ -1,0 +1,67 @@
+<div class="panel">
+  @if (tipos().length > 1) {
+    <fieldset>
+      <legend>{{ i18n.t('filtroTipo') }}</legend>
+      @for (t of tipos(); track t.clave) {
+        <label class="opcion">
+          <input type="checkbox" [checked]="filtros().tipos.includes(t.clave)" (change)="tipo(t.clave)" />
+          <span class="texto">{{ t.nombre }}</span>
+          <span class="cuenta">{{ t.total }}</span>
+        </label>
+      }
+    </fieldset>
+  }
+
+  @if (conAbierto()) {
+    <fieldset>
+      <legend>{{ i18n.t('filtroAhora') }}</legend>
+      <label class="opcion">
+        <input type="checkbox" [checked]="filtros().abierto" (change)="abierto(!filtros().abierto)" />
+        <span class="texto">{{ i18n.t('abiertoAhora') }}</span>
+      </label>
+    </fieldset>
+  }
+
+  @if (conPrecio()) {
+    <fieldset>
+      <legend>{{ i18n.t('filtroPrecio') }}</legend>
+      <div class="precios">
+        @for (n of precios; track n) {
+          <button
+            type="button"
+            class="precio"
+            [class.activo]="filtros().precio === n"
+            [attr.aria-pressed]="filtros().precio === n"
+            (click)="precio(n)"
+          >
+            {{ i18n.t('precioHasta') }} {{ '$'.repeat(n) }}
+          </button>
+        }
+      </div>
+    </fieldset>
+  }
+
+  @if (serviciosDisponibles().length) {
+    <fieldset>
+      <legend>{{ i18n.t('filtroServicios') }}</legend>
+      @for (s of serviciosDisponibles(); track s.clave) {
+        <label class="opcion">
+          <input type="checkbox" [checked]="filtros().servicios.includes(s.clave)" (change)="servicio(s.clave)" />
+          <span class="texto">{{ s.nombre }}</span>
+        </label>
+      }
+    </fieldset>
+  }
+
+  @if (conIdiomas()) {
+    <fieldset>
+      <legend>{{ i18n.t('filtroIdiomas') }}</legend>
+      @for (i of idiomas; track i) {
+        <label class="opcion">
+          <input type="checkbox" [checked]="filtros().idiomas.includes(i)" (change)="idioma(i)" />
+          <span class="texto">{{ etiquetaIdioma(i) }}</span>
+        </label>
+      }
+    </fieldset>
+  }
+</div>

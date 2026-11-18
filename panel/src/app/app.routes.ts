@@ -1,0 +1,48 @@
+import { Routes } from '@angular/router';
+import { conVentas, conAdministracion, conModeracion, conCatalogo, conCobros, conContenido, conRevision, conRolDelEquipo, conSesion, inicioPorRol } from './core/guardias';
+import { Shell } from './layout/shell';
+
+export const routes: Routes = [
+  { path: 'ingresar', loadComponent: () => import('./pages/ingresar/ingresar').then((m) => m.Ingresar), title: 'Ingresar · Panel de administración' },
+  { path: 'sin-acceso', canActivate: [conSesion], loadComponent: () => import('./pages/sin-acceso/sin-acceso').then((m) => m.SinAcceso), title: 'Sin acceso · Panel de administración' },
+  {
+    path: '',
+    component: Shell,
+    canActivate: [conSesion, conRolDelEquipo],
+    children: [
+      { path: '', pathMatch: 'full', canActivate: [inicioPorRol], children: [] },
+      { path: 'hoy', loadComponent: () => import('./pages/hoy/hoy').then((m) => m.Hoy), title: 'Hoy · Panel de administración' },
+      { path: 'inicio', canActivate: [conContenido], loadComponent: () => import('./pages/inicio/inicio').then((m) => m.Inicio), title: 'Inicio del sitio · Panel de administración' },
+      { path: 'inicio/:id', canActivate: [conContenido], loadComponent: () => import('./pages/bloque/bloque').then((m) => m.Bloque), title: 'Bloque de inicio · Panel de administración' },
+      { path: 'lugares', canActivate: [conContenido], data: { tipo: 'lugares' }, loadComponent: () => import('./pages/contenido/lista').then((m) => m.ListaContenido), title: 'Lugares · Panel de administración' },
+      { path: 'lugares/:id', canActivate: [conContenido], loadComponent: () => import('./pages/lugar/lugar').then((m) => m.Lugar), title: 'Lugar · Panel de administración' },
+      { path: 'rutas', canActivate: [conContenido], data: { tipo: 'rutas' }, loadComponent: () => import('./pages/contenido/lista').then((m) => m.ListaContenido), title: 'Rutas · Panel de administración' },
+      { path: 'rutas/:id', canActivate: [conContenido], loadComponent: () => import('./pages/ruta/ruta').then((m) => m.Ruta), title: 'Ruta · Panel de administración' },
+      { path: 'eventos', canActivate: [conContenido], data: { tipo: 'eventos' }, loadComponent: () => import('./pages/contenido/lista').then((m) => m.ListaContenido), title: 'Eventos · Panel de administración' },
+      { path: 'eventos/:id', canActivate: [conContenido], loadComponent: () => import('./pages/evento/evento').then((m) => m.Evento), title: 'Evento · Panel de administración' },
+      { path: 'catalogos', canActivate: [conContenido], loadComponent: () => import('./pages/catalogos/catalogos').then((m) => m.CatalogosPagina), title: 'Catálogos · Panel de administración' },
+      { path: 'comunidad', canActivate: [conModeracion], loadComponent: () => import('./pages/comunidad/comunidad').then((m) => m.Comunidad), title: 'Moderación · Panel de administración' },
+      { path: 'usuarios', canActivate: [conAdministracion], loadComponent: () => import('./pages/usuarios/usuarios').then((m) => m.Usuarios), title: 'Usuarios y roles · Panel de administración' },
+      { path: 'privacidad', canActivate: [conAdministracion], loadComponent: () => import('./pages/privacidad/privacidad').then((m) => m.Privacidad), title: 'Privacidad · Panel de administración' },
+      { path: 'prospectos', canActivate: [conVentas], loadComponent: () => import('./pages/prospectos/prospectos').then((m) => m.Prospectos), title: 'Prospectos · Panel de administración' },
+      { path: 'prospectos/:id', canActivate: [conVentas], loadComponent: () => import('./pages/prospecto/prospecto').then((m) => m.Prospecto), title: 'Prospecto · Panel de administración' },
+      { path: 'importaciones', loadComponent: () => import('./pages/importaciones/importaciones').then((m) => m.Importaciones), title: 'Importaciones · Panel de administración' },
+      { path: 'afiliados', loadComponent: () => import('./pages/afiliados/afiliados').then((m) => m.Afiliados), title: 'Afiliados · Panel de administración' },
+      { path: 'patrocinios', canActivate: [conVentas], loadComponent: () => import('./pages/patrocinios/patrocinios').then((m) => m.Patrocinios), title: 'Patrocinios · Panel de administración' },
+      { path: 'campanas', canActivate: [conContenido], loadComponent: () => import('./pages/campanas/campanas').then((m) => m.Campanas), title: 'Campañas · Panel de administración' },
+      { path: 'metricas', loadComponent: () => import('./pages/metricas/metricas').then((m) => m.Metricas), title: 'Métricas · Panel de administración' },
+      { path: 'auditoria', canActivate: [conAdministracion], loadComponent: () => import('./pages/auditoria/auditoria').then((m) => m.AuditoriaPagina), title: 'Auditoría · Panel de administración' },
+      { path: 'configuracion', canActivate: [conAdministracion], loadComponent: () => import('./pages/configuracion/configuracion').then((m) => m.ConfiguracionPagina), title: 'Configuración · Panel de administración' },
+      { path: 'plantillas', canActivate: [conAdministracion], loadComponent: () => import('./pages/plantillas/plantillas').then((m) => m.Plantillas), title: 'Plantillas · Panel de administración' },
+      { path: 'notificaciones', canActivate: [conAdministracion], loadComponent: () => import('./pages/notificaciones/notificaciones').then((m) => m.Notificaciones), title: 'Notificaciones · Panel de administración' },
+      { path: 'negocios', loadComponent: () => import('./pages/negocios/negocios').then((m) => m.Negocios), title: 'Negocios · Panel de administración' },
+      { path: 'negocios/:id', loadComponent: () => import('./pages/negocio/negocio').then((m) => m.Negocio), title: 'Negocio · Panel de administración' },
+      { path: 'cobros', canActivate: [conCobros], loadComponent: () => import('./pages/cobros/cobros').then((m) => m.Cobros), title: 'Cobros · Panel de administración' },
+      { path: 'catalogo', canActivate: [conCatalogo], loadComponent: () => import('./pages/catalogo/catalogo').then((m) => m.Catalogo), title: 'Planes y precios · Panel de administración' },
+      { path: 'revision', canActivate: [conRevision], loadComponent: () => import('./pages/cola/cola').then((m) => m.Cola), title: 'Cola de revisión · Panel de administración' },
+      { path: 'revision/historial', canActivate: [conRevision], loadComponent: () => import('./pages/historial/historial').then((m) => m.HistorialPagina), title: 'Historial · Panel de administración' },
+      { path: 'revision/negocios/:id', canActivate: [conRevision], loadComponent: () => import('./pages/detalle/detalle').then((m) => m.Detalle), title: 'Revisar ficha · Panel de administración' },
+    ],
+  },
+  { path: '**', redirectTo: '' },
+];

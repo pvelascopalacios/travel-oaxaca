@@ -1,0 +1,60 @@
+.resultados { display: grid; gap: 14px; }
+
+.periodos {
+  display: inline-flex;
+  border: 1.5px solid var(--linea);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--papel);
+
+  button {
+    min-height: 40px;
+    padding: 0 16px;
+    border: 0;
+    background: transparent;
+    font-weight: 600;
+    font-size: 0.86rem;
+    cursor: pointer;
+  }
+  button[aria-pressed='true'] { background: var(--noche); color: #fff; }
+}
+
+.cifras {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  &.cargando { opacity: 0.55; }
+}
+
+.cifra {
+  padding: 14px 16px;
+  border: 1px solid var(--linea);
+  border-radius: 14px;
+  background: var(--papel);
+  display: grid;
+  gap: 2px;
+
+  b { font: 800 1.9rem var(--fuente-titulo); }
+  span { font-size: 0.8rem; color: var(--suave); }
+}
+
+.delta { font-size: 0.8rem; font-weight: 600; color: var(--sierra); font-style: normal; &.baja { color: var(--grana); } }
+
+.grafica { width: 100%; height: 150px; display: block; }
+.ejes { display: flex; justify-content: space-between; gap: 8px; font-size: 0.78rem; color: var(--suave); }
+.leyenda {
+  display: flex;
+  gap: 14px;
+  font-size: 0.8rem;
+  color: var(--suave);
+  i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .v { background: var(--laguna); }
+  .c { background: var(--grana); }
+}
+
+.tabla { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { text-align: left; padding: 8px 4px; border-bottom: 1px solid var(--linea); }
+th:not(:first-child), td:not(:first-child) { text-align: right; }
+
+.limitado { padding: 14px 16px; border-radius: 14px; background: var(--azul); font-size: 0.9rem; }

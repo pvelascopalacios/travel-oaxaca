@@ -1,0 +1,102 @@
+<div class="contenedor pagina">
+  <div class="tarjeta">
+    @if (enCuenta()) {
+      <h1>{{ i18n.tf('hola', { nombre: sesion.primerNombre() }) }}</h1>
+      <p class="suave">{{ sesion.usuario()?.correo }}</p>
+      @if (aviso(); as a) {
+        <p class="aviso ok" role="status">{{ a }}</p>
+      }
+      @if (sesion.usuario(); as u) {
+        @if (!u.correoVerificado) {
+          <div class="aviso" role="status">
+            <p>{{ i18n.t('correoSinConfirmar') }}</p>
+            <button type="button" class="enlace" (click)="reenviar()">{{ i18n.t('reenviarCorreo') }}</button>
+          </div>
+        }
+      }
+      @if (error().general; as g) {
+        <p class="aviso" role="alert">{{ g }}</p>
+      }
+      <nav class="cuenta-enlaces" [attr.aria-label]="i18n.t('cuenta')">
+        <a class="boton" [routerLink]="['/', i18n.lang(), 'perfil']">{{ i18n.t('perfilIrAPerfil') }}</a>
+        <a class="boton secundario" [routerLink]="['/', i18n.lang(), 'guardados']">{{ i18n.t('guardados') }}</a>
+        <a class="boton secundario" [routerLink]="['/', i18n.lang(), 'reporte']">{{ i18n.t('reporteMensual') }}</a>
+        <button type="button" class="boton secundario" (click)="salir()">{{ i18n.t('salir') }}</button>
+      </nav>
+    } @else {
+      <h1>{{ i18n.t(tituloClave()) }}</h1>
+
+      @if (volver() && (vista() === 'ingreso' || vista() === 'registro')) {
+        <p class="contexto">{{ i18n.t('ingresaParaContinuar') }}</p>
+      }
+
+      @if (vista() === 'verificar') {
+        @if (enviando()) {
+          <p class="suave" aria-live="polite">{{ i18n.t('cargando') }}</p>
+        }
+        @if (aviso(); as a) {
+          <p class="aviso ok" role="status">{{ a }}</p>
+          <a class="boton" [routerLink]="['/', i18n.lang(), 'ingresar']">{{ i18n.t('iniciarSesion') }}</a>
+        }
+        @if (error().general; as g) {
+          <p class="aviso" role="alert">{{ g }}</p>
+        }
+      } @else {
+        <form class="formulario" (ngSubmit)="enviar()" novalidate>
+          @if (vista() === 'registro') {
+            <label [class.error]="campo('nombre')">{{ i18n.t('nombre') }}
+              <input type="text" name="nombre" autocomplete="name" maxlength="120" required [(ngModel)]="nombre" />
+              @if (campo('nombre'); as m) { <span class="msg">{{ m }}</span> }
+            </label>
+          }
+          @if (vista() !== 'restablecer') {
+            <label [class.error]="campo('correo')">{{ i18n.t('correo') }}
+              <input type="email" name="correo" autocomplete="email" inputmode="email" maxlength="254" required [(ngModel)]="correo" />
+              @if (campo('correo'); as m) { <span class="msg">{{ m }}</span> }
+            </label>
+          }
+          @if (vista() !== 'olvide') {
+            <label [class.error]="campo('clave')">{{ vista() === 'restablecer' ? i18n.t('claveNueva') : i18n.t('clave') }}
+              <input type="password" name="clave" [attr.autocomplete]="vista() === 'ingreso' ? 'current-password' : 'new-password'" maxlength="128" required [(ngModel)]="clave" />
+              @if (campo('clave'); as m) { <span class="msg">{{ m }}</span> }
+            </label>
+          }
+          @if (vista() === 'registro') {
+            <label class="check" [class.error]="campo('aceptaTerminos')">
+              <input type="checkbox" name="acepta" [(ngModel)]="acepta" />
+              <span>{{ i18n.t('acepto') }} <a [routerLink]="['/', i18n.lang(), 'terminos']">{{ i18n.t('pieTerminos') }}</a> / <a [routerLink]="['/', i18n.lang(), 'privacidad']">{{ i18n.t('pieAviso') }}</a>.</span>
+            </label>
+            @if (campo('aceptaTerminos'); as m) { <span class="msg">{{ m }}</span> }
+          }
+
+          @if (error().general; as g) {
+            <p class="aviso" role="alert">{{ g }}</p>
+          }
+          @if (aviso(); as a) {
+            <p class="aviso ok" role="status">{{ a }}</p>
+          }
+
+          <button type="submit" class="boton" [disabled]="enviando()">
+            @switch (vista()) {
+              @case ('registro') { {{ i18n.t('crearCuenta') }} }
+              @case ('olvide') { {{ i18n.t('enviarEnlace') }} }
+              @case ('restablecer') { {{ i18n.t('guardarClave') }} }
+              @default { {{ i18n.t('ingresar') }} }
+            }
+          </button>
+        </form>
+
+        <div class="otros">
+          @if (vista() === 'ingreso') {
+            <button type="button" class="enlace" (click)="cambiar('olvide')">{{ i18n.t('olvideClave') }}</button>
+            <p class="suave">{{ i18n.t('primeraVez') }} <button type="button" class="enlace" (click)="cambiar('registro')">{{ i18n.t('crearCuenta') }}</button></p>
+          } @else if (vista() === 'registro') {
+            <p class="suave">{{ i18n.t('yaTienesCuenta') }} <button type="button" class="enlace" (click)="cambiar('ingreso')">{{ i18n.t('iniciarSesion') }}</button></p>
+          } @else {
+            <button type="button" class="enlace" (click)="cambiar('ingreso')">{{ i18n.t('volverIngresar') }}</button>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>

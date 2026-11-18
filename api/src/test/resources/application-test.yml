@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: ${TEST_DB_URL:jdbc:postgresql://localhost:5432/to_api_test}
+    username: ${TEST_DB_USER:postgres}
+    password: ${TEST_DB_PASSWORD:}
+app:
+  seguridad:
+    jwt-secreto: clave-de-pruebas-de-al-menos-32-caracteres-xxxx
+    limite-registros-hora: 100000
+    limite-recuperaciones-hora: 100000
+    limite-dispositivos-hora: 100000
+  correo:
+    worker: false

@@ -1,0 +1,148 @@
+<header class="cab fila-cab">
+  <div>
+    <h1>Patrocinios</h1>
+    <p class="suave chico">Quién ocupa cada espacio destacado y cuándo. Para programar, el negocio debe tener plan Destacado y estar publicado.</p>
+  </div>
+  <button type="button" class="mini-b ok" (click)="abrirForm()">+ Programar patrocinio</button>
+</header>
+
+@if (aviso(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+
+@if (abierto()) {
+  <form class="tarjeta" (ngSubmit)="programar()" novalidate>
+    <h2>Programar patrocinio</h2>
+    <div class="rejilla">
+      <label [class.error]="errores()['espacioId']">Espacio *
+        <select name="espacioId" [(ngModel)]="form.espacioId">
+          <option value="">Elige…</option>
+          @for (e of espacios(); track e.id) { @if (e.activo) { <option [value]="e.id">{{ etiquetaEspacio(e) }} (cupo {{ e.maxSimultaneos }})</option> } }
+        </select>
+        @if (errores()['espacioId']; as m) { <span class="msg">{{ m }}</span> }
+      </label>
+      <app-selector-negocio titulo="Negocio *" [elegido]="negocioElegido()" [error]="errores()['negocioId'] ?? null" (cambio)="elegirNegocio($event)" />
+    </div>
+    <div class="rejilla">
+      <label [class.error]="errores()['inicio']">Inicio * <input type="date" name="inicio" [(ngModel)]="form.inicio" />@if (errores()['inicio']; as m) { <span class="msg">{{ m }}</span> }</label>
+      <label [class.error]="errores()['fin']">Fin * <input type="date" name="fin" [(ngModel)]="form.fin" />@if (errores()['fin']; as m) { <span class="msg">{{ m }}</span> }</label>
+      <label [class.error]="errores()['precio']">Precio (MXN) * <input name="precio" inputmode="decimal" [(ngModel)]="form.precio" />@if (errores()['precio']; as m) { <span class="msg">{{ m }}</span> }</label>
+      <label [class.error]="errores()['cupon']">Cupón <input name="cupon" maxlength="35" [(ngModel)]="form.cupon" />@if (errores()['cupon']; as m) { <span class="msg">{{ m }}</span> }</label>
+    </div>
+    <label class="casilla"><input type="checkbox" name="conPago" [(ngModel)]="form.conPago" /> Registrar el pago ahora</label>
+    @if (form.conPago) {
+      <div class="rejilla">
+        <label>Método <select name="metodo" [(ngModel)]="form.metodo">@for (m of metodos; track m.clave) { <option [value]="m.clave">{{ m.texto }}</option> }</select></label>
+        <label [class.error]="errores()['referencia']">Referencia <input name="referencia" maxlength="105" [(ngModel)]="form.referencia" />@if (errores()['referencia']; as m) { <span class="msg">{{ m }}</span> }</label>
+        <label class="casilla"><input type="checkbox" name="pagado" [(ngModel)]="form.pagado" /> Ya está pagado</label>
+      </div>
+    }
+    @if (errorApi(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+    <div class="barra-guardar">
+      <button type="submit" class="mini-b ok" [disabled]="trabajando()">{{ trabajando() ? 'Programando…' : 'Programar' }}</button>
+      <button type="button" class="mini-b" [disabled]="trabajando()" (click)="abierto.set(false)">Cancelar</button>
+    </div>
+  </form>
+}
+
+<div class="tarjeta">
+  <div class="fila-cab">
+    <h2>Calendario</h2>
+    <div class="filtros-f">
+      <label>Desde <input type="date" name="desde" [(ngModel)]="desde" (change)="cargar()" /></label>
+      <label>Hasta <input type="date" name="hasta" [(ngModel)]="hasta" (change)="cargar()" /></label>
+      <label>Espacio <select name="filtroEspacio" [(ngModel)]="filtroEspacio" (change)="cargar()"><option value="">Todos</option>@for (e of espacios(); track e.id) { <option [value]="e.id">{{ etiquetaEspacio(e) }}</option> }</select></label>
+      <label class="casilla"><input type="checkbox" name="soloVigentes" [(ngModel)]="soloVigentes" (change)="cargar()" /> Solo vigentes</label>
+    </div>
+  </div>
+  @if (fallo(); as f) { <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p> }
+  @else if (lista() === null) { <p class="carga" aria-live="polite">Cargando…</p> }
+  @else if (filas().length === 0) { <p class="vacio">No hay patrocinios en este periodo.</p> }
+  @else {
+    <div class="cal-marco">
+      <div class="cal">
+        <div class="cal-eje"><span class="cal-nombre"></span><div class="cal-pista">@for (m of marcas(); track m.izq) { <span class="marca" [style.left.%]="m.izq">{{ m.texto }}</span> }</div></div>
+        @for (f of filas(); track f.espacioId) {
+          <div class="cal-fila">
+            <span class="cal-nombre">{{ f.etiqueta }}@if (cupo(f.espacioId); as c) { <small class="suave"> · cupo {{ c }}</small> }</span>
+            <div class="cal-pista" [style.height.px]="f.carriles * 30 + 4">
+              @for (p of f.items; track p.id) {
+                <button type="button" class="barra" [class.prog]="p.estado === 'programado'" [class.cancel]="p.estado === 'cancelado'" [class.sel]="elegido()?.id === p.id"
+                  [style.left.%]="p.izq" [style.width.%]="p.ancho" [style.top.px]="p.carril * 30 + 2"
+                  [title]="p.negocioNombre + ' · ' + p.inicio + ' a ' + p.fin" (click)="elegir(p)">{{ p.negocioNombre }}</button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+    <p class="chico suave">Sólida: activo · punteada: programado · tachada: cancelado. Toca una barra para ver el detalle.</p>
+  }
+</div>
+
+@if (elegido(); as p) {
+  <div class="tarjeta detalle">
+    <div class="fila-cab"><h2>{{ p.negocioNombre }}</h2><span class="st" [class]="estadoInfo(p.estado).clase">{{ estadoInfo(p.estado).texto }}</span></div>
+    <p class="chico">{{ nombreEspacio(p.espacioClave) }} · {{ fecha(p.inicio) }} – {{ fecha(p.fin) }} · {{ p.precio | number: '1.2-2' }} {{ p.moneda }}@if (p.pagoId) { · con pago registrado }</p>
+    @if (puedeCancelar(p)) {
+      @if (!confirmandoCancelar()) { <button type="button" class="mini-b mal" (click)="confirmandoCancelar.set(true)">Cancelar patrocinio…</button> }
+      @else {
+        <div class="confirma">
+          <p class="chico">Se libera el cupo y el negocio deja de aparecer como patrocinado. <b>No se puede reactivar</b>; habría que programarlo de nuevo.</p>
+          <div class="acciones">
+            <button type="button" class="mini-b mal" [disabled]="trabajando()" (click)="cancelar()">{{ trabajando() ? 'Cancelando…' : 'Sí, cancelar' }}</button>
+            <button type="button" class="mini-b" (click)="confirmandoCancelar.set(false)">No</button>
+          </div>
+        </div>
+      }
+    } @else { <p class="chico suave">Este patrocinio ya terminó o está cancelado.</p> }
+    @if (errorAccion(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+  </div>
+}
+
+@if (lista(); as l) {
+  @if (l.length) {
+    <div class="tarjeta tabla">
+      <table>
+        <thead><tr><th>Negocio</th><th>Espacio</th><th>Periodo</th><th>Estado</th><th class="num">Precio</th></tr></thead>
+        <tbody>
+          @for (p of l; track p.id) {
+            <tr><td class="wrap"><button type="button" class="enlace" (click)="elegir(p)">{{ p.negocioNombre }}</button></td><td>{{ nombreEspacio(p.espacioClave) }}</td><td>{{ fecha(p.inicio) }} – {{ fecha(p.fin) }}</td><td><span class="st" [class]="estadoInfo(p.estado).clase">{{ estadoInfo(p.estado).texto }}</span></td><td class="num">{{ p.precio | number: '1.2-2' }} {{ p.moneda }}</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}
+
+<div class="tarjeta">
+  <div class="fila-cab"><h2>Espacios y cupo</h2><button type="button" class="mini-b" (click)="nuevoEspacio()">+ Nuevo espacio</button></div>
+  @if (editandoEspacio(); as ed) {
+    <form (ngSubmit)="guardarEspacio()" novalidate>
+      <h3>{{ ed === 'nuevo' ? 'Nuevo espacio' : 'Editar espacio' }}</h3>
+      <div class="rejilla">
+        <label [class.error]="erroresEspacio()['clave']">Espacio * <select name="clave" [(ngModel)]="formEspacio.clave">@for (c of claves; track c.clave) { <option [value]="c.clave">{{ c.texto }}</option> }</select>@if (erroresEspacio()['clave']; as m) { <span class="msg">{{ m }}</span> }</label>
+        <label>Destino <select name="destinoId" [(ngModel)]="formEspacio.destinoId"><option value="">Todos</option>@for (d of destinos(); track d.id) { <option [value]="d.id">{{ d.nombre }}</option> }</select></label>
+        <label>Categoría <select name="categoriaId" [(ngModel)]="formEspacio.categoriaId"><option value="">Todas</option>@for (c of categorias(); track c.id) { <option [value]="c.id">{{ c.etiqueta }}</option> }</select></label>
+        <label>Región <select name="regionId" [(ngModel)]="formEspacio.regionId"><option value="">Todas</option>@for (r of regiones(); track r.id) { <option [value]="r.id">{{ r.nombre }}</option> }</select></label>
+        <label [class.error]="erroresEspacio()['maxSimultaneos']">Cupo (a la vez) * <input name="maxSimultaneos" inputmode="numeric" [(ngModel)]="formEspacio.maxSimultaneos" />@if (erroresEspacio()['maxSimultaneos']; as m) { <span class="msg">{{ m }}</span> }</label>
+        <label class="casilla"><input type="checkbox" name="activoEspacio" [(ngModel)]="formEspacio.activo" /> Activo</label>
+      </div>
+      @if (errorEspacio(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+      <div class="barra-guardar">
+        <button type="submit" class="mini-b ok" [disabled]="trabajando()">{{ trabajando() ? 'Guardando…' : 'Guardar espacio' }}</button>
+        <button type="button" class="mini-b" [disabled]="trabajando()" (click)="editandoEspacio.set(null)">Cancelar</button>
+      </div>
+    </form>
+  }
+  @if (espacios(); as es) {
+    @if (es.length === 0) { <p class="vacio">Aún no hay espacios.</p> }
+    @else {
+      <div class="tabla"><table>
+        <thead><tr><th>Espacio</th><th>Alcance</th><th class="num">Cupo</th><th>Estado</th><th></th></tr></thead>
+        <tbody>@for (e of es; track e.id) {
+          <tr><td>{{ nombreEspacio(e.clave) }}<br><span class="chico suave">{{ e.clave }}</span></td><td class="wrap">{{ alcance(e) || 'Todo' }}</td><td class="num">{{ e.maxSimultaneos }}</td><td><span class="st" [class]="e.activo ? 'ok' : 'gris'">{{ e.activo ? 'Activo' : 'Apagado' }}</span></td>
+            <td class="nw"><button type="button" class="mini" (click)="editarEspacio(e)">Editar</button></td></tr>
+        }</tbody>
+      </table></div>
+    }
+  }
+</div>

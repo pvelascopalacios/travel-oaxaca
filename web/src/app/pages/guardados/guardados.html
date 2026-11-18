@@ -1,0 +1,48 @@
+<div class="contenedor pagina">
+  <header class="cabecera">
+    <h1>{{ i18n.t('guardados') }}</h1>
+    <p class="suave">{{ i18n.t('guardadosTexto') }}</p>
+  </header>
+
+  @if (!sesion.listo()) {
+    <p class="suave" aria-live="polite">{{ i18n.t('cargando') }}</p>
+  } @else if (!sesion.autenticado()) {
+    <div class="vacio">
+      <p>{{ i18n.t('guardadosSinSesion') }}</p>
+      <button type="button" class="boton" (click)="ingresar()">{{ i18n.t('iniciarSesion') }}</button>
+    </div>
+  } @else if (cargando()) {
+    <p class="suave" aria-live="polite">{{ i18n.t('cargando') }}</p>
+  } @else if (fallo()) {
+    <p class="vacio">{{ i18n.t('errorCarga') }}</p>
+  } @else if (!cuenta('todo')) {
+    <div class="vacio">
+      <p>{{ i18n.t('guardadosVacio') }}</p>
+      <a class="boton" [routerLink]="['/', i18n.lang(), 'descubrir']">{{ i18n.t('grupoDescubrir') }}</a>
+    </div>
+  } @else {
+    <div class="chips" role="group" [attr.aria-label]="i18n.t('filtros')">
+      @for (t of tipos; track t) {
+        @if (t === 'todo' || cuenta(t)) {
+          <button type="button" class="chip" [class.on]="filtro() === t" [attr.aria-pressed]="filtro() === t" (click)="filtro.set(t)">
+            {{ t === 'todo' ? i18n.t('todo') : i18n.tDinamico('fav', t) }} · {{ cuenta(t) }}
+          </button>
+        }
+      }
+    </div>
+    <div class="rejilla">
+      @for (f of visibles(); track f.tipo + f.id) {
+        <article class="fav">
+          <a class="enlace-fav" [routerLink]="enlace(f)">
+            <div class="foto"><app-imagen [url]="f.imagenUrl" [alt]="f.nombre" [texto]="f.nombre" /></div>
+            <div class="txt">
+              <small>{{ i18n.tDinamico('fav', f.tipo) }} · {{ guardadoEl(f) }}</small>
+              <h2>{{ f.nombre }}</h2>
+            </div>
+          </a>
+          <button type="button" class="corazon" [attr.aria-label]="i18n.t('quitarGuardado') + ': ' + f.nombre" (click)="quitar(f)">♥</button>
+        </article>
+      }
+    </div>
+  }
+</div>

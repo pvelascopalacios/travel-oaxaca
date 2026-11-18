@@ -1,0 +1,129 @@
+<ng-template #ico let-clave let-tam="tam">
+  <svg [attr.width]="tam ?? 15" [attr.height]="tam ?? 15" viewBox="0 0 24 24" fill="none" stroke="currentColor" [attr.stroke-width]="clave === 'mas' ? 3 : 2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path [attr.d]="icono(clave)" /></svg>
+</ng-template>
+
+<div class="panel">
+  <aside class="lado" aria-label="Menú del panel">
+    <div class="marca">
+      <img src="logo-emblema.png" alt="" width="32" height="32" />
+      <span>Travel Oaxaca<small>Panel de administración</small></span>
+    </div>
+
+    <button type="button" class="ir-a" (click)="abrirPaleta()" aria-haspopup="dialog">
+      <ng-container *ngTemplateOutlet="ico; context: { $implicit: 'buscar', tam: 16 }" />
+      Ir a…<kbd>Ctrl K</kbd>
+    </button>
+
+    <nav>
+      <a class="fila hoy" routerLink="/hoy" [class.activo]="ruta() === '/hoy'" [attr.aria-current]="ruta() === '/hoy' ? 'page' : null">
+        <span class="ico" style="--g-fondo: rgb(255 255 255 / 18%); --g-tinta: #fff"><ng-container *ngTemplateOutlet="ico; context: { $implicit: 'hoy' }" /></span>
+        Hoy
+      </a>
+
+      @for (g of grupos(); track g.clave) {
+        @if (g.enlaces.length === 1) {
+          <a class="fila" [routerLink]="g.enlaces[0].ruta" [class.activo]="esActivo(g.enlaces[0])" [attr.aria-current]="esActivo(g.enlaces[0]) ? 'page' : null">
+            <span class="ico" [style.--g-fondo]="color(g.clave).fondo" [style.--g-tinta]="color(g.clave).tinta"><ng-container *ngTemplateOutlet="ico; context: { $implicit: g.clave }" /></span>
+            {{ g.titulo }}
+            @if (g.enlaces[0].contador) { <span class="cnt" [attr.aria-label]="g.enlaces[0].contador + ' pendientes'">{{ g.enlaces[0].contador }}</span> }
+          </a>
+        } @else {
+          <button type="button" class="fila cab-grupo" [class.con-activo]="tieneActivo(g)" [attr.aria-expanded]="abierto(g)" [attr.aria-controls]="'grupo-' + g.clave" (click)="alternar(g)">
+            <span class="ico" [style.--g-fondo]="color(g.clave).fondo" [style.--g-tinta]="color(g.clave).tinta"><ng-container *ngTemplateOutlet="ico; context: { $implicit: g.clave }" /></span>
+            {{ g.titulo }}
+            @if (contadorGrupo(g)) { <span class="cnt" [attr.aria-label]="contadorGrupo(g) + ' pendientes'">{{ contadorGrupo(g) }}</span> }
+            <span class="flecha" [class.abierta]="abierto(g)" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="icono('flecha')" /></svg></span>
+          </button>
+          @if (abierto(g)) {
+            <div class="sublista" [id]="'grupo-' + g.clave">
+              @for (e of g.enlaces; track e.ruta) {
+                <a class="fila sub" [routerLink]="e.ruta" [class.activo]="esActivo(e)" [attr.aria-current]="esActivo(e) ? 'page' : null">
+                  {{ e.texto }}
+                  @if (e.contador) { <span class="cnt" [attr.aria-label]="e.contador + ' pendientes'">{{ e.contador }}</span> }
+                </a>
+              }
+            </div>
+          }
+        }
+      }
+    </nav>
+
+    <div class="yo">
+      <strong>{{ sesion.usuario()?.nombre }}</strong>
+      <span>{{ sesion.usuario()?.correo }}</span>
+      @if (rol()) { <span class="rol">{{ rol() }}</span> }
+      <button type="button" class="salir" (click)="salir()">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <header class="barra-movil">
+    <span class="marca-movil">Travel Oaxaca</span>
+    <button type="button" class="ir-a-movil" (click)="abrirPaleta()" aria-haspopup="dialog">
+      <ng-container *ngTemplateOutlet="ico; context: { $implicit: 'buscar', tam: 15 }" />Ir a…
+    </button>
+  </header>
+
+  <main class="contenido">
+    <router-outlet />
+  </main>
+
+  <app-avisos />
+
+  <nav class="barra-inferior" aria-label="Menú del panel">
+    @for (p of pestanas(); track p.ruta) {
+      <a [routerLink]="p.ruta" [class.activo]="pestanaActiva(p)" [attr.aria-current]="pestanaActiva(p) ? 'page' : null">
+        <ng-container *ngTemplateOutlet="ico; context: { $implicit: p.icono, tam: 22 }" />
+        {{ p.texto }}
+        @if (p.contador) { <span class="insignia" [attr.aria-label]="p.contador + ' pendientes'">{{ p.contador }}</span> }
+      </a>
+    }
+    <button type="button" [class.activo]="enMas() || masAbierto()" [attr.aria-expanded]="masAbierto()" (click)="masAbierto.set(!masAbierto())">
+      <ng-container *ngTemplateOutlet="ico; context: { $implicit: 'mas', tam: 22 }" />
+      Más
+    </button>
+  </nav>
+
+  @if (masAbierto()) {
+    <div class="velo" (click)="masAbierto.set(false)"></div>
+    <div class="hoja" role="dialog" aria-modal="true" aria-label="Todo el panel">
+      <div class="hoja-cab">
+        <div><strong>{{ sesion.usuario()?.nombre }}</strong>@if (rol()) { <span class="rol">{{ rol() }}</span> }</div>
+        <button type="button" class="cerrar" (click)="masAbierto.set(false)" aria-label="Cerrar">✕</button>
+      </div>
+      @for (g of grupos(); track g.clave) {
+        <h2 class="hoja-titulo">
+          <span class="ico" [style.--g-fondo]="color(g.clave).fondo" [style.--g-tinta]="color(g.clave).tinta"><ng-container *ngTemplateOutlet="ico; context: { $implicit: g.clave }" /></span>
+          {{ g.titulo }}
+        </h2>
+        <div class="hoja-enlaces">
+          @for (e of g.enlaces; track e.ruta) {
+            <a [routerLink]="e.ruta" [class.activo]="esActivo(e)">{{ e.texto }}@if (e.contador) { <span class="cnt">{{ e.contador }}</span> }</a>
+          }
+        </div>
+      }
+      <button type="button" class="salir" (click)="salir()">Cerrar sesión</button>
+    </div>
+  }
+
+  @if (paletaAbierta()) {
+    <div class="velo" (click)="cerrarPaleta()"></div>
+    <div class="paleta" role="dialog" aria-modal="true" aria-label="Ir a una página del panel">
+      <div class="paleta-busca">
+        <ng-container *ngTemplateOutlet="ico; context: { $implicit: 'buscar', tam: 18 }" />
+        <input #entrada type="text" role="combobox" autocomplete="off" placeholder="Escribe a dónde quieres ir…" aria-controls="lista-paleta" aria-expanded="true"
+          [attr.aria-activedescendant]="resultados().length ? 'op-' + indice() : null"
+          [value]="consulta()" (input)="escribir($any($event.target).value)" (keydown)="teclasPaleta($event)" />
+      </div>
+      <ul id="lista-paleta" role="listbox">
+        @for (c of resultados(); track c.ruta; let i = $index) {
+          <li role="option" [id]="'op-' + i" [attr.aria-selected]="i === indice()" [class.sel]="i === indice()" (mouseenter)="indice.set(i)">
+            <a [routerLink]="c.ruta" tabindex="-1">{{ c.texto }}<small>{{ c.grupo }}</small></a>
+          </li>
+        } @empty {
+          <li class="nada">No encontramos esa página.</li>
+        }
+      </ul>
+      <p class="paleta-ayuda"><kbd>↑</kbd><kbd>↓</kbd> moverse · <kbd>Enter</kbd> abrir · <kbd>Esc</kbd> cerrar</p>
+    </div>
+  }
+</div>

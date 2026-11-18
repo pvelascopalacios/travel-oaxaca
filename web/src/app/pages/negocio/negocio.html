@@ -1,0 +1,314 @@
+@if (noExiste()) {
+  <app-no-existe />
+} @else if (fallo()) {
+  <div class="contenedor pagina"><p class="aviso-error">{{ i18n.t('errorCarga') }}</p></div>
+} @else if (n(); as n) {
+  <article class="contenedor pagina">
+    <nav class="migas" [attr.aria-label]="i18n.t('inicio')">
+      <a [routerLink]="['/', i18n.lang()]">{{ i18n.t('inicio') }}</a>
+      @if (grupo(); as g) {
+        <span aria-hidden="true">›</span>
+        <a [routerLink]="['/', i18n.lang(), g.ruta]">{{ i18n.t(g.titulo) }}</a>
+      }
+      <span aria-hidden="true">›</span>
+      <span>{{ n.categoriaNombre }}</span>
+    </nav>
+
+    <app-galeria [fotos]="n.fotos" [nombre]="n.nombre" />
+
+    <header class="cabecera">
+      <div class="chips">
+        @if (n.patrocinado) {
+          <span class="chip patrocinado">{{ i18n.t('patrocinado') }}</span>
+        }
+        @if (n.verificado) {
+          <span class="chip verificado">✓ {{ i18n.t('verificado') }}</span>
+        }
+        @if (suc(); as s) {
+          @if (s.abiertoAhora != null) {
+            <span class="chip" [class.abierto]="s.abiertoAhora">{{ s.abiertoAhora ? i18n.t('abiertoAhora') : i18n.t('cerradoAhora') }}</span>
+          }
+        }
+      </div>
+      <h1>{{ n.nombre }}</h1>
+      <p class="suave">
+        {{ n.categoriaNombre }}
+        @if (suc()?.municipioNombre; as m) {
+          · {{ m }}@if (suc()?.regionNombre; as r) {, {{ r }}}
+        }
+      </p>
+      <p>
+        @if (calificacion(); as c) {
+          <a href="#resenas"><span class="estrella" aria-hidden="true">★</span> <strong>{{ c }}</strong> <span class="suave">({{ n.totalResenas }} {{ i18n.t('resenas') }})</span></a>
+        } @else {
+          <span class="suave">{{ i18n.t('resenasPocas') }}</span>
+        }
+        @if (posicionTexto(); as p) {
+          <span class="suave"> · {{ p }}</span>
+        }
+      </p>
+    </header>
+
+    <div class="cuerpo">
+      <div class="principal">
+        @if (descripcion().length) {
+          <section class="bloque">
+            <h2>{{ i18n.t('acerca') }}</h2>
+            @for (p of descripcion(); track $index) {
+              <p>{{ p }}</p>
+            }
+          </section>
+        }
+
+        @if (datos().length) {
+          <dl class="datos">
+            @for (d of datos(); track d.etiqueta) {
+              <div>
+                <dt>{{ d.etiqueta }}</dt>
+                <dd>{{ d.valor }}</dd>
+              </div>
+            }
+          </dl>
+        }
+
+        @for (g of ofertas(); track g.tipo) {
+          <section class="bloque">
+            <h2>{{ i18n.tDinamico('oferta', g.tipo) }}</h2>
+            @for (sec of g.secciones; track $index) {
+              <div class="seccion-menu">
+                @if (sec.titulo) {
+                  <h3>{{ sec.titulo }}</h3>
+                }
+                <ul class="tarjetas">
+                  @for (o of sec.items; track o.id) {
+                    <li class="oferta">
+                      <div class="fila">
+                        <h3>{{ o.nombre }}</h3>
+                        @if (precio(o); as pr) {
+                          <span class="precio">{{ pr }}@if (o.unidadPrecio) { <span class="suave"> {{ i18n.tDinamico('unidad', o.unidadPrecio) }}</span> }</span>
+                        }
+                      </div>
+                      @if (o.descripcion) {
+                        <p class="suave">{{ o.descripcion }}</p>
+                      }
+                      @if (miniDato(o).length || o.etiquetas?.length) {
+                        <ul class="etiquetas">
+                          @for (m of miniDato(o); track m) {
+                            <li>{{ m }}</li>
+                          }
+                          @for (e of o.etiquetas ?? []; track e) {
+                            <li>{{ i18n.tDinamico('etiqueta', e) }}</li>
+                          }
+                        </ul>
+                      }
+                      @if (o.incluye?.length || o.noIncluye?.length) {
+                        <div class="listas">
+                          @if (o.incluye?.length) {
+                            <div>
+                              <strong>{{ i18n.t('incluye') }}</strong>
+                              <ul>@for (i of o.incluye; track $index) { <li>{{ i }}</li> }</ul>
+                            </div>
+                          }
+                          @if (o.noIncluye?.length) {
+                            <div>
+                              <strong>{{ i18n.t('noIncluye') }}</strong>
+                              <ul>@for (i of o.noIncluye; track $index) { <li>{{ i }}</li> }</ul>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+            @if (g.tipo === 'platillo' && menuUrl(); as mu) {
+              <p><a class="boton secundario" [href]="mu" target="_blank" rel="noopener noreferrer" (click)="uso('clic_web')">{{ i18n.t('verMenuCompleto') }}</a></p>
+            }
+          </section>
+        }
+
+        @if (n.servicios.length) {
+          <section class="bloque">
+            <h2>{{ i18n.t('servicios') }}</h2>
+            <ul class="etiquetas">
+              @for (s of n.servicios; track s.clave) {
+                <li>
+                  @if (grupo(); as g) {
+                    <a [routerLink]="['/', i18n.lang(), g.ruta]" [queryParams]="{ servicios: s.clave }" [attr.aria-label]="i18n.tf('servicioVerMas', { nombre: s.nombre })">{{ s.nombre }}</a>
+                  } @else {
+                    {{ s.nombre }}
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
+        @if (n.idiomas.length) {
+          <section class="bloque">
+            <h2>{{ i18n.t('idiomasHablan') }}</h2>
+            <ul class="etiquetas">
+              @for (i of n.idiomas; track i.codigo) {
+                <li>{{ i.nombre }}</li>
+              }
+            </ul>
+          </section>
+        }
+
+        @if (n.promociones.length) {
+          <section class="bloque">
+            <h2>{{ i18n.t('promociones') }}</h2>
+            <ul class="tarjetas">
+              @for (p of n.promociones; track p.id) {
+                <li class="promo">
+                  <h3>{{ p.titulo }}</h3>
+                  @if (p.descripcion) {
+                    <p>{{ p.descripcion }}</p>
+                  }
+                  @if (p.codigo) {
+                    <p><span class="codigo">{{ i18n.tf('promoCodigo', { codigo: p.codigo }) }}</span></p>
+                  }
+                  @if (p.fin) {
+                    <p class="suave">{{ i18n.tf('promoHasta', { fecha: fechaLarga(p.fin) }) }}</p>
+                  }
+                  @if (p.condiciones) {
+                    <p class="suave">{{ p.condiciones }}</p>
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
+        @if (tieneHorario() || excepciones().length) {
+          <section class="bloque">
+            <h2>{{ i18n.t('horarios') }}</h2>
+            @if (n.sucursales.length > 1) {
+              <div class="selector" role="group" [attr.aria-label]="i18n.t('dondeEsta')">
+                @for (s of n.sucursales; track s.id; let i = $index) {
+                  <button type="button" [attr.aria-pressed]="sucursal() === i" (click)="sucursal.set(i)">{{ s.nombre || n.nombre }}</button>
+                }
+              </div>
+            }
+            @if (tieneHorario()) {
+              <ul class="horario">
+                @for (f of filas(); track f.dia) {
+                  <li [class.hoy]="f.dia === hoyDia">
+                    <span class="dia">{{ dia(f.dia) }}@if (f.dia === hoyDia) { · {{ i18n.t('hoy') }} }</span>
+                    <span class="tramos">{{ f.cerrado ? i18n.t('cerrado') : f.tramos.join(' · ') }}</span>
+                  </li>
+                }
+              </ul>
+            }
+            @if (excepciones().length) {
+              <h3 class="sub">{{ i18n.t('horarioEspecial') }}</h3>
+              <ul class="horario">
+                @for (e of excepciones(); track e.fecha) {
+                  <li>
+                    <span>{{ fechaCorta(e.fecha) }}@if (e.nota) { <span class="suave"> · {{ e.nota }}</span> }</span>
+                    <span class="tramos">{{ e.cerrado || !e.abre ? i18n.t('cerrado') : hora(e.abre) + '–' + hora(e.cierra) }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </section>
+        }
+
+        @if (pines().length || suc()?.direccion) {
+          <section class="bloque">
+            <h2>{{ i18n.t('dondeEsta') }}</h2>
+            @if (suc(); as s) {
+              @if (s.direccion) {
+                <p>{{ s.direccion }}</p>
+              }
+              @if (s.referencia) {
+                <p class="suave">{{ s.referencia }}</p>
+              }
+            }
+            @if (pines().length) {
+              <div class="mapa"><app-mapa [pines]="pines()" [conZona]="false" [elegido]="suc()?.id ?? null" /></div>
+            }
+            @if (llegar(); as u) {
+              <a class="boton secundario" [href]="u" target="_blank" rel="noopener noreferrer" (click)="uso('como_llegar')">{{ i18n.t('comoLlegar') }}</a>
+            }
+          </section>
+        }
+
+        @if (politicas(); as pol) {
+          <section class="bloque">
+            <h2>{{ i18n.t('politicas') }}</h2>
+            <p class="polit">{{ pol }}</p>
+          </section>
+        }
+
+        <app-resenas [slug]="n.slug" />
+
+        <p class="reportar-ficha">
+          <button type="button" class="enlace-chico" (click)="reportarFicha()">{{ i18n.t('fichaAlgoMal') }}</button>
+        </p>
+        @if (reportando()) {
+          <app-reportar tipo="ficha" [objetivoId]="n.id" (cerrar)="reportando.set(false)" />
+        }
+
+        @if (n.actualizadoEn) {
+          <p class="suave actualizado">{{ i18n.tf('actualizadoEl', { fecha: fechaLarga(n.actualizadoEn) }) }}</p>
+        }
+      </div>
+
+      <aside class="lateral" [attr.aria-label]="i18n.t('contacto')">
+        <div class="precio-bloque">
+          @if (n.precioDesde != null) {
+            <span class="suave">{{ i18n.t('precioDesde') }}</span>
+            <strong>{{ precio(n) }}</strong>
+            @if (n.unidadPrecio) {
+              <span class="suave">{{ i18n.tDinamico('unidad', n.unidadPrecio) }}</span>
+            }
+          } @else {
+            <span class="suave">{{ i18n.t('sinPrecio') }}</span>
+          }
+        </div>
+        @if (whatsapp(); as w) {
+          <a class="boton" [href]="w.href" target="_blank" rel="noopener noreferrer" (click)="uso('toque_whatsapp')">{{ i18n.t('whatsapp') }}</a>
+        }
+        @if (reservas(); as r) {
+          <a class="boton" [class.secundario]="!!whatsapp()" [href]="r.href" target="_blank" rel="noopener noreferrer" (click)="uso('clic_web')">{{ i18n.t('reservar') }}</a>
+        }
+        @if (telefono(); as t) {
+          <a class="boton secundario" [href]="t.href" (click)="uso('llamada')">{{ i18n.t('llamar') }} · {{ t.texto }}</a>
+        }
+        @if (web(); as w) {
+          <a class="boton secundario" [href]="w.href" target="_blank" rel="noopener noreferrer" (click)="uso('clic_web')">{{ i18n.t('sitioWeb') }}</a>
+        }
+        @if (llegar(); as u) {
+          <a class="boton secundario" [href]="u" target="_blank" rel="noopener noreferrer" (click)="uso('como_llegar')">{{ i18n.t('comoLlegar') }}</a>
+        }
+        <div class="acciones">
+          <app-guardar tipo="negocio" [elementoId]="n.id" />
+          <app-guardar-en-lista tipo="negocio" [elementoId]="n.id" />
+          <button type="button" class="boton secundario" (click)="compartir()">{{ copiado() ? i18n.t('enlaceCopiado') : i18n.t('compartir') }}</button>
+        </div>
+        @if (otros().length) {
+          <ul class="contactos">
+            @for (c of otros(); track c.href) {
+              <li><a [href]="c.href" target="_blank" rel="noopener noreferrer">{{ c.texto }}</a></li>
+            }
+          </ul>
+        }
+      </aside>
+    </div>
+  </article>
+
+  @if (whatsapp() || telefono() || llegar()) {
+    <div class="barra-movil">
+      @if (whatsapp(); as w) {
+        <a class="boton" [href]="w.href" target="_blank" rel="noopener noreferrer" (click)="uso('toque_whatsapp')">{{ i18n.t('whatsapp') }}</a>
+      }
+      @if (telefono(); as t) {
+        <a class="boton secundario" [href]="t.href" (click)="uso('llamada')">{{ i18n.t('llamar') }}</a>
+      } @else if (llegar(); as u) {
+        <a class="boton secundario" [href]="u" target="_blank" rel="noopener noreferrer" (click)="uso('como_llegar')">{{ i18n.t('comoLlegar') }}</a>
+      }
+    </div>
+  }
+}

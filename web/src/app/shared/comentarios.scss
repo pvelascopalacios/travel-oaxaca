@@ -1,0 +1,29 @@
+:host { display: block; }
+.coms { padding: 22px 24px; border: 1px solid var(--linea); border-radius: var(--radio); background: var(--papel); }
+h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; font: 700 1.25rem var(--fuente-titulo); }
+.cuenta { padding: 1px 10px; border-radius: 999px; background: var(--cantera); color: var(--tinta-suave); font: 600 0.82rem var(--fuente); }
+.invita { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 14px; padding: 10px 12px 10px 16px; border-radius: 22px; background: var(--cantera); }
+.invita .suave { min-width: 0; }
+.aviso-corto { margin: 8px 0 4px; }
+.quien { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.av { display: inline-grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--cantera); color: var(--noche); font: 700 0.72rem var(--fuente); }
+.suave { color: var(--tinta-suave); }
+.chico { font-size: 0.86rem; }
+.nuevo, .resp { display: grid; gap: 8px; margin-bottom: 12px; }
+textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--linea); border-radius: 10px; background: var(--papel); color: var(--tinta); font: inherit; }
+.fila { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.banner, .aviso { margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; background: var(--cantera); }
+.banner p, .aviso { margin: 0; }
+.lista, .hijos { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.hijos { margin-top: 10px; }
+.com { display: grid; gap: 6px; min-width: 0; padding-top: 14px; border-top: 1px solid var(--linea); }
+.lista > .com:first-child { padding-top: 0; border-top: 0; }
+@media (max-width: 560px) { .coms { padding: 18px 16px; } }
+.hijo { margin-left: 18px; padding: 0 0 0 12px; border-top: 0; border-left: 3px solid var(--linea); }
+.com p { margin: 0; }
+.texto { overflow-wrap: anywhere; white-space: pre-line; }
+.chip { padding: 2px 10px; border-radius: 999px; background: var(--cantera); color: var(--ocre); font-size: 0.78rem; font-weight: 600; }
+.acc { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: 0.88rem; }
+.lnk { min-height: 36px; padding: 0 2px; border: 0; background: none; color: var(--tinta-suave); font: inherit; cursor: pointer; }
+.lnk:hover, .lnk.on { color: var(--grana); }
+.lnk.peligro { color: var(--grana); font-weight: 600; }

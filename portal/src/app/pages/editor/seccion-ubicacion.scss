@@ -1,0 +1,34 @@
+:host { display: contents; }
+
+.forma { display: grid; gap: 14px; }
+.confirma { display: grid; gap: 12px; padding: 14px; border-radius: 12px; background: var(--aviso); }
+
+.horarios { display: grid; }
+.dia {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--linea);
+}
+.franjas { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.franja { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; input { width: min(150px, 34vw); } }
+.dia-acciones { display: flex; flex-wrap: wrap; gap: 4px 14px; justify-content: flex-end; }
+
+.fecha {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid var(--linea);
+  border-radius: 12px;
+}
+.fecha .nota { grid-column: span 2; }
+
+@media (max-width: 800px) {
+  .dia { grid-template-columns: minmax(0, 1fr); }
+  .dia-acciones { justify-content: flex-start; }
+  .fecha .nota { grid-column: auto; }
+}

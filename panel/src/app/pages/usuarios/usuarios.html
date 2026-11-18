@@ -1,0 +1,114 @@
+<header class="cab">
+  <h1>Usuarios y roles</h1>
+  <p class="suave chico">Solo administración. Aquí se dan los roles de plataforma: admin, editor y ventas. Dueño y colaborador se dan desde el negocio.</p>
+</header>
+
+<div class="filtros">
+  <label class="q">Buscar
+    <input type="search" name="texto" placeholder="Nombre o correo…" autocomplete="off" [ngModel]="textoBusqueda()" (ngModelChange)="buscar($event)" />
+  </label>
+  <label>Estado
+    <select name="estado" [ngModel]="estado() ?? ''" (ngModelChange)="navegar({ estado: $event || null })">
+      <option value="">Todos los estados</option>
+      @for (e of estados; track e.clave) { <option [value]="e.clave">{{ e.texto }}</option> }
+    </select>
+  </label>
+  <label>Rol
+    <select name="rol" [ngModel]="rol() ?? ''" (ngModelChange)="navegar({ rol: $event || null })">
+      <option value="">Todos los roles</option>
+      @for (r of roles; track r) { <option [value]="r">{{ r }}</option> }
+    </select>
+  </label>
+</div>
+
+@if (cargando() && filas().length === 0) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else if (filas().length === 0) {
+  @if (hayFiltros()) {
+    <app-vacio tipo="filtro" icono="filtro" titulo="No hay usuarios con estos filtros">
+      <p>Prueba con otro nombre o correo, o quita los filtros.</p>
+      <div class="vacio-e-bs"><button type="button" class="vb p" (click)="quitarFiltros()">Quitar todos los filtros</button></div>
+    </app-vacio>
+  } @else {
+    <app-vacio tipo="nuevo" icono="plus" titulo="Aún no hay usuarios"><p>Las cuentas aparecen cuando alguien se registra.</p></app-vacio>
+  }
+} @else {
+  <ul class="lista">
+    @for (u of filas(); track u.id) {
+      <li class="caja" [class.abierta]="abierto() === u.id">
+        <div class="usr">
+          <div class="av" aria-hidden="true">{{ inic(u.nombre, u.correo) }}</div>
+          <div class="dato">
+            <h3>{{ u.nombre || 'Sin nombre' }} @if (u.id === yoId()) { <span class="tag">Tú</span> }</h3>
+            <div class="meta">
+              <span class="chico suave">{{ u.correo }}</span>
+              <span class="st" [class]="estadoInfo(u.estado).clase">{{ estadoInfo(u.estado).texto }}</span>
+              @for (r of u.roles; track r) { <span class="rolchip fijo">{{ norm(r) }}</span> }
+            </div>
+            <p class="chico suave">
+              @if (u.ultimoAccesoEn) { Último acceso {{ fechaHora(u.ultimoAccesoEn) }} } @else { Aún no ha ingresado }
+              · cuenta desde {{ fecha(u.creadoEn) }} · {{ u.correoVerificado ? 'correo verificado' : 'correo sin verificar' }}
+            </p>
+          </div>
+          <button type="button" class="mini-b" [attr.aria-expanded]="abierto() === u.id" (click)="administrar(u)">{{ abierto() === u.id ? 'Cerrar' : 'Administrar' }}</button>
+        </div>
+
+        @if (abierto() === u.id) {
+          <div class="admin">
+            <h4>Roles de plataforma</h4>
+            <div class="chips-roles">
+              @for (r of u.roles; track r) {
+                @if (esGlobal(r)) {
+                  <span class="rolchip">{{ norm(r) }}
+                    <button type="button" [attr.aria-label]="'Quitar ' + norm(r)" [disabled]="trabajando() || noQuitar(u, r) !== null" [title]="noQuitar(u, r) ?? ''" (click)="quitarRol(u, r)">×</button>
+                  </span>
+                } @else {
+                  <span class="rolchip fijo" title="Se gestiona desde el negocio">{{ norm(r) }} · desde el negocio</span>
+                }
+              }
+              @if (u.roles.length === 0) { <span class="chico suave">Sin roles.</span> }
+            </div>
+            @if (faltan(u).length) {
+              <div class="acciones">
+                <select name="rolNuevo" aria-label="Rol a agregar" [(ngModel)]="rolNuevo">
+                  <option value="">Agregar rol…</option>
+                  @for (r of faltan(u); track r) { <option [value]="r">{{ r }}</option> }
+                </select>
+                <button type="button" class="mini-b ok" [disabled]="trabajando()" (click)="agregarRol(u)">Agregar</button>
+              </div>
+            }
+
+            <h4>Cuenta</h4>
+            @if (noEstado(u); as motivo) {
+              <p class="chico suave">{{ motivo }}</p>
+            } @else if (u.estado === 'suspendido') {
+              <div class="acciones"><button type="button" class="mini-b ok" [disabled]="trabajando()" (click)="cambiarEstado(u, 'activo')">Reactivar cuenta</button></div>
+            } @else if (!confirmando()) {
+              <div class="acciones"><button type="button" class="mini-b mal" [disabled]="trabajando()" (click)="confirmando.set(true)">Suspender cuenta…</button></div>
+            } @else {
+              <div class="confirma">
+                <p class="chico">Al suspender a {{ u.nombre || u.correo }} se cierran todas sus sesiones y no podrá entrar. ¿Continuar?</p>
+                <div class="acciones">
+                  <button type="button" class="mini-b mal" [disabled]="trabajando()" (click)="cambiarEstado(u, 'suspendido')">Sí, suspender</button>
+                  <button type="button" class="mini-b" (click)="confirmando.set(false)">No</button>
+                </div>
+              </div>
+            }
+            @if (aviso(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+            @if (errorAccion(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+            <p class="nota">La API no deja suspender ni quitar el rol al último administrador, ni cambiar tu propia cuenta.</p>
+          </div>
+        }
+      </li>
+    }
+  </ul>
+  <div class="paginas">
+    <span class="chico suave">Mostrando {{ desde() }}–{{ hasta() }} de {{ total() }}</span>
+    <div class="acciones">
+      <button type="button" class="mini-b" [disabled]="!hayAnterior()" (click)="irPagina(-1)">← Anterior</button>
+      <button type="button" class="mini-b" [disabled]="!haySiguiente()" (click)="irPagina(1)">Siguiente →</button>
+    </div>
+  </div>
+}

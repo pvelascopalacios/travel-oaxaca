@@ -1,0 +1,94 @@
+<header class="cab fila-cab">
+  <div>
+    <h1>Negocios</h1>
+    <p class="suave chico">Todos los negocios del sistema, con su estado y el puntaje de su ficha.</p>
+  </div>
+  @if (!cargando() && !fallo() && total() > 0) { <span class="chico suave">Mostrando {{ desde() }}–{{ hasta() }} de {{ total() }}</span> }
+</header>
+
+<div class="barra">
+  <label class="q">
+    <span class="solo-lector">Buscar</span>
+    <input type="search" name="q" placeholder="Buscar por nombre…" autocomplete="off" [ngModel]="textoBusqueda()" (ngModelChange)="buscar($event)" />
+  </label>
+  <label>
+    <span class="solo-lector">Categoría</span>
+    <select name="categoria" [ngModel]="categoria() ?? ''" (ngModelChange)="navegar({ categoria: $event || null })">
+      <option value="">Todas las categorías</option>
+      @for (c of categorias(); track c.id) { <option [value]="c.id">{{ c.etiqueta }}</option> }
+    </select>
+  </label>
+  <label>
+    <span class="solo-lector">Municipio</span>
+    <input type="search" name="municipio" list="municipios" placeholder="Municipio…" autocomplete="off" [ngModel]="textoMunicipio()" (ngModelChange)="escribirMunicipio($event)" />
+    <datalist id="municipios">@for (m of opcionesMunicipio(); track m.id) { <option [value]="m.nombre"></option> }</datalist>
+  </label>
+  <div class="densidad" role="group" aria-label="Densidad de la tabla">
+    <button type="button" [class.on]="!compacta()" [attr.aria-pressed]="!compacta()" (click)="densidad(false)">Cómoda</button>
+    <button type="button" [class.on]="compacta()" [attr.aria-pressed]="compacta()" (click)="densidad(true)">Compacta</button>
+  </div>
+</div>
+
+<div class="fichas" role="group" aria-label="Filtrar por estado">
+  <button type="button" class="ficha" [class.on]="!estado()" [attr.aria-pressed]="!estado()" (click)="navegar({ estado: null })">Todos @if (conteos()['todos'] != null) { <i>{{ conteos()['todos'] }}</i> }</button>
+  @for (e of estados; track e) {
+    <button type="button" class="ficha" [class.on]="estado() === e" [attr.aria-pressed]="estado() === e" (click)="navegar({ estado: e })">{{ estadoInfo(e).texto }} @if (conteos()[e] != null) { <i>{{ conteos()[e] }}</i> }</button>
+  }
+</div>
+
+@if (cargando()) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else if (filas().length === 0) {
+  @if (chips().length > 0) {
+    <app-vacio tipo="filtro" icono="filtro" titulo="No hay negocios con estos filtros">
+      <div class="vacio-e-chips">
+        @for (c of chips(); track c.clave) { <button type="button" class="chip-f" (click)="navegar(c.extra)">{{ c.texto }} ✕</button> }
+      </div>
+      <p>Prueba quitando uno, o empieza de nuevo.</p>
+      <div class="vacio-e-bs"><button type="button" class="vb p" (click)="quitarFiltros()">Quitar todos los filtros</button></div>
+    </app-vacio>
+  } @else {
+    <app-vacio tipo="nuevo" icono="plus" titulo="Aún no hay negocios">
+      <p>Los negocios aparecen cuando alguien registra uno o cuando se importa un archivo CSV.</p>
+      <div class="vacio-e-bs"><a class="vb p" routerLink="/importaciones">Importar un CSV</a></div>
+    </app-vacio>
+  }
+} @else {
+  <div class="tarjeta tabla" [class.compacta]="compacta()">
+    <table>
+      <thead><tr><th>Negocio</th><th>Estado</th><th>Categoría</th><th>Municipio</th><th>Ficha</th><th>Alta</th><th>Publicado</th></tr></thead>
+      <tbody>
+        @for (n of filas(); track n.id) {
+          <tr>
+            <td>
+              <a class="quien" [routerLink]="['/negocios', n.id]">
+                <span class="av" aria-hidden="true" [style.background]="colorAvatar(n.nombreComercial).fondo" [style.color]="colorAvatar(n.nombreComercial).tinta">{{ iniciales(n.nombreComercial) }}</span>
+                <span class="nombre">{{ n.nombreComercial }}</span>
+              </a>
+            </td>
+            <td data-label="Estado"><span class="estado" [class]="estadoInfo(n.estado).clase">{{ estadoInfo(n.estado).texto }}</span></td>
+            <td data-label="Categoría">{{ categoriaDe(n) }}</td>
+            <td data-label="Municipio">{{ n.municipioNombre || '—' }}</td>
+            <td data-label="Ficha">
+              <span class="puntaje-fila" [attr.title]="'Ficha completa al ' + porcentaje(n.puntajeFicha) + ' %'">
+                <span class="barra-p" aria-hidden="true"><i [style.width.%]="porcentaje(n.puntajeFicha)" [style.background]="puntajeColor(n.puntajeFicha)"></i></span>
+                <b>{{ n.puntajeFicha }}</b>
+              </span>
+            </td>
+            <td data-label="Alta">{{ origen(n.origenAlta) }}</td>
+            <td data-label="Publicado" class="nw">{{ fecha(n.publicadoEn) || '—' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="paginas">
+    <span class="chico suave">Mostrando {{ desde() }}–{{ hasta() }} de {{ total() }}</span>
+    <div class="acciones">
+      <a class="mini-b enlace-b" [class.inactivo]="!hayAnterior()" routerLink="/negocios" [queryParams]="consulta({ pagina: nPagina() > 1 ? '' + nPagina() : null })">← Anterior</a>
+      <a class="mini-b enlace-b" [class.inactivo]="!haySiguiente()" routerLink="/negocios" [queryParams]="consulta({ pagina: '' + (nPagina() + 2) })">Siguiente →</a>
+    </div>
+  </div>
+}

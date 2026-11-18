@@ -1,0 +1,230 @@
+<section class="entrada">
+  <div class="contenedor">
+    <h1>{{ i18n.t('homeA') }} <mark>{{ i18n.t('homeMarca') }}</mark> {{ i18n.t('homeB') }}</h1>
+    <div class="busqueda"><app-buscador /></div>
+    <ul class="atajos">
+      <li><a [routerLink]="['/', i18n.lang(), 'eventos']" [queryParams]="atajos().hoy">{{ i18n.t('atajoHoy') }}</a></li>
+      <li><a [routerLink]="['/', i18n.lang(), 'eventos']" [queryParams]="atajos().finDeSemana">{{ i18n.t('atajoFinDeSemana') }}</a></li>
+      <li><a [routerLink]="['/', i18n.lang(), 'buscar']" [queryParams]="{ cerca: 1 }">{{ i18n.t('atajoCerca') }}</a></li>
+      @for (a of atajosHacer; track a.texto) {
+        <li><a [routerLink]="['/', i18n.lang(), ...a.ruta]" [queryParams]="a.queryParams">{{ i18n.t(a.texto) }}</a></li>
+      }
+    </ul>
+  </div>
+  @if (diapositivas().length) {
+    <div class="contenedor"><app-destacado [slides]="diapositivas()" /></div>
+  }
+</section>
+
+<div class="contenedor">
+  @if (fallo() && !alojamientos().length && !comida().length && !lugares().length && !eventos().length) {
+    <p class="aviso-error">{{ i18n.t('errorCarga') }}</p>
+  }
+
+  <section class="seccion" [attr.aria-label]="i18n.t('quieresHacer')">
+    <div class="seccion-cabecera"><h2>{{ i18n.t('quieresHacer') }}</h2></div>
+    <ul class="entradas">
+      @for (e of entradas; track e.clave; let i = $index) {
+        <li>
+          <a [class]="'tono-' + (i + 1)" [routerLink]="['/', i18n.lang(), e.ruta]">
+            <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path [attr.d]="e.icono" /></svg>
+            <strong>{{ i18n.t(e.titulo) }}</strong>
+            <span>{{ i18n.t(e.texto) }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </section>
+
+  @if (eventos().length) {
+    <section class="seccion" [attr.aria-label]="i18n.t('proximosEventos')">
+      <div class="seccion-cabecera">
+        <h2>{{ i18n.t('proximosEventos') }}</h2>
+        <a [routerLink]="['/', i18n.lang(), 'eventos']">{{ i18n.t('verTodo') }}</a>
+      </div>
+      <ul class="eventos">
+        @for (e of eventos(); track e.id) {
+          <li>
+            <a [routerLink]="['/', i18n.lang(), 'evento', e.slug]">
+              <span class="fecha" aria-hidden="true">
+                <strong>{{ fechaBloque(e).dias }}</strong>
+                <small>{{ fechaBloque(e).mes }}</small>
+              </span>
+              <span class="texto">
+                <strong>{{ e.nombre }}</strong>
+                @if (e.municipioNombre) { <span class="lugar">{{ e.municipioNombre }}</span> }
+                @if (esGratis(e)) { <span class="gratis">{{ i18n.t('gratis') }}</span> }
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (alojamientos().length) {
+    <section class="seccion">
+      <div class="seccion-cabecera">
+        <h2>{{ i18n.t('dormirTitulo') }}</h2>
+        <a [routerLink]="['/', i18n.lang(), 'dormir']">{{ alojamientosTotal() > 1 ? i18n.tf('verTodosN', { n: alojamientosTotal() }) : i18n.t('verTodo') }}</a>
+      </div>
+      <div class="rejilla">
+        @for (n of alojamientos(); track n.id) {
+          <app-tarjeta-negocio [negocio]="n" />
+        }
+      </div>
+    </section>
+  }
+
+  @if (comida().length) {
+    <section class="seccion">
+      <div class="seccion-cabecera">
+        <h2>{{ i18n.t('comerTitulo') }}</h2>
+        <a [routerLink]="['/', i18n.lang(), 'comer-y-beber']">{{ comidaTotal() > 1 ? i18n.tf('verTodosN', { n: comidaTotal() }) : i18n.t('verTodo') }}</a>
+      </div>
+      <div class="rejilla">
+        @for (n of comida(); track n.id) {
+          <app-tarjeta-negocio [negocio]="n" />
+        }
+      </div>
+    </section>
+  }
+
+  @if (lugares().length) {
+    <section class="seccion">
+      <div class="seccion-cabecera">
+        <h2>{{ i18n.t('hacerTitulo') }}</h2>
+        <a [routerLink]="['/', i18n.lang(), 'descubrir']">{{ lugaresTotal() > 1 ? i18n.tf('verTodosN', { n: lugaresTotal() }) : i18n.t('verTodo') }}</a>
+      </div>
+      <div class="rejilla">
+        @for (l of lugares().slice(0, 4); track l.id) {
+          <app-tarjeta-lugar [lugar]="l" />
+        }
+      </div>
+    </section>
+  }
+
+  @if (rutas().length) {
+    <section class="seccion">
+      <div class="seccion-cabecera">
+        <h2>{{ i18n.t('rutasTitulo') }}</h2>
+        <a [routerLink]="['/', i18n.lang(), 'rutas']">{{ i18n.t('verRutas') }}</a>
+      </div>
+      <ul class="rutas">
+        @for (r of rutas(); track r.id; let i = $index) {
+          <li>
+            <a [class]="'tono-' + ((i % 5) + 1)" [routerLink]="['/', i18n.lang(), 'ruta', r.slug]">
+              <strong>{{ r.nombre }}</strong>
+              @if (r.descripcion) {
+                <span class="desc">{{ r.descripcion }}</span>
+              }
+              @if (horas(r) || km(r)) {
+                <span class="datos">
+                  @if (horas(r); as h) { <span class="pastilla"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>{{ h }}</span> }
+                  @if (km(r); as k) { <span class="pastilla"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 19c4 0 3-14 7-14s3 14 7 14" /></svg>{{ k }}</span> }
+                </span>
+              }
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (regionesConContenido().length) {
+    <section class="seccion" [attr.aria-label]="i18n.t('regionesTitulo')">
+      <div class="seccion-cabecera">
+        <div>
+          <h2>{{ i18n.t('regionesTitulo') }}</h2>
+          <p class="sub">{{ i18n.t('regionesTexto') }}</p>
+        </div>
+      </div>
+      <ul class="regiones">
+        @for (r of regionesConContenido(); track r.id; let i = $index) {
+          <li>
+            <a [class]="'tono-' + ((i % 5) + 1)" [routerLink]="['/', i18n.lang(), 'region', r.slug]">
+              @if (r.portadaUrl) {
+                <img [src]="r.portadaUrl" alt="" loading="lazy" decoding="async" />
+              }
+              <span class="pie">
+                <strong>{{ r.nombre }}</strong>
+                @if (cuentaRegion(r); as c) { <small>{{ c }}</small> }
+                <span class="flecha" aria-hidden="true">→</span>
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+</div>
+
+@if (pueblos().length) {
+  <section class="seccion contenedor">
+    <p class="eyebrow">{{ i18n.t('pueblosEyebrow') }}</p>
+    <div class="seccion-cabecera"><h2>{{ i18n.t('pueblosTitulo') }}</h2></div>
+    <ul class="pueblos">
+      @for (p of pueblos(); track p.id) {
+        <li>
+          <img [src]="p.fotoUrl" alt="" loading="lazy" decoding="async" />
+          <strong>{{ p.titulo }}</strong>
+          @if (p.texto) {
+            <span>{{ p.texto }}</span>
+          }
+          @if (p.comunidades) {
+            <span>{{ i18n.tf('comunidadesN', { n: p.comunidades }) }}</span>
+          }
+          @if (p.saludo) {
+            <em>{{ p.saludo }}</em>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+}
+
+@if (historias().length) {
+  <section class="banda">
+    <div class="contenedor">
+      <p class="eyebrow">{{ i18n.t('genteEyebrow') }}</p>
+      <div class="seccion-cabecera"><h2>{{ i18n.t('genteTitulo') }}</h2></div>
+      <ul class="historias">
+        @for (h of historias(); track h.id) {
+          <li>
+            <img [src]="h.fotoUrl" alt="" loading="lazy" decoding="async" />
+            <blockquote>{{ h.titulo }}</blockquote>
+            <p>
+              @if (h.negocioSlug) {
+                <a [routerLink]="['/', i18n.lang(), 'negocio', h.negocioSlug]"><strong>{{ h.persona }}</strong></a>
+              } @else {
+                <strong>{{ h.persona }}</strong>
+              }
+              @if (h.lugar) {
+                · {{ h.lugar }}
+              }
+            </p>
+          </li>
+        }
+      </ul>
+    </div>
+  </section>
+}
+
+@if (reels().length) {
+  <section class="seccion contenedor">
+    <p class="eyebrow">{{ i18n.t('reelsEyebrow') }}</p>
+    <div class="seccion-cabecera"><h2>{{ i18n.t('reelsTitulo') }}</h2></div>
+    <ul class="reels">
+      @for (r of reels(); track r.id) {
+        <li>
+          <a [href]="r.enlace" target="_blank" rel="noopener">
+            <img [src]="r.fotoUrl" alt="" loading="lazy" decoding="async" />
+            <span class="velo"></span>
+            <strong>{{ r.titulo }}</strong>
+            <span class="lugar">{{ r.texto }} · {{ i18n.t('verEnFacebook') }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  </section>
+}

@@ -1,0 +1,68 @@
+<header class="cab">
+  <h1>Auditoría</h1>
+  <p class="suave chico">Quién cambió qué y cuándo. Es solo lectura: el registro no se puede editar desde aquí.</p>
+</header>
+
+<form class="tarjeta" (ngSubmit)="filtrar()">
+  <div class="rejilla">
+    <label>Tabla <input name="tabla" autocomplete="off" placeholder="negocios, configuracion…" [(ngModel)]="tabla" /></label>
+    <label>Acción <select name="accion" [(ngModel)]="accion"><option value="">Todas</option>@for (a of acciones; track a.clave) { <option [value]="a.clave">{{ a.texto }}</option> }</select></label>
+    <label>Usuario <select name="usuarioId" [(ngModel)]="usuarioId"><option value="">Todos</option>@for (u of usuarios(); track u.id) { <option [value]="u.id">{{ u.nombre || u.correo }}</option> }</select></label>
+    <label>Registro (id) <input name="registroId" autocomplete="off" [(ngModel)]="registroId" /></label>
+    <label>Desde <input type="date" name="desde" [(ngModel)]="desde" /></label>
+    <label>Hasta <input type="date" name="hasta" [(ngModel)]="hasta" /></label>
+  </div>
+  <div class="barra-guardar"><button type="submit" class="mini-b ok">Buscar</button><button type="button" class="mini-b" (click)="limpiar()">Quitar filtros</button></div>
+</form>
+
+@if (fallo(); as f) { <p class="aviso" role="alert">{{ f.general }}</p> }
+@if (datos(); as d) {
+  @if (d.elementos.length === 0) {
+    @if (hayFiltros()) {
+      <app-vacio tipo="filtro" icono="filtro" titulo="No hay movimientos con esos filtros">
+        <p>Prueba con otro rango de fechas, otra tabla u otro usuario.</p>
+        <div class="vacio-e-bs"><button type="button" class="vb p" (click)="limpiar()">Quitar todos los filtros</button></div>
+      </app-vacio>
+    } @else {
+      <app-vacio tipo="nuevo" icono="plus" titulo="Aún no hay movimientos"><p>Cada cambio del sistema quedará registrado aquí.</p></app-vacio>
+    }
+  }
+  @else {
+    <div class="tarjeta tabla">
+      <table>
+        <thead><tr><th>Cuándo</th><th>Quién</th><th>Tabla</th><th>Acción</th><th>Registro</th><th></th></tr></thead>
+        <tbody>
+          @for (a of d.elementos; track a.id) {
+            <tr>
+              <td class="nw">{{ cuando(a.ocurrioEn) }}</td>
+              <td class="wrap">{{ a.usuarioCorreo || 'Sistema' }}</td>
+              <td>{{ a.tabla }}</td>
+              <td><span class="st" [class]="accionInfo(a.accion).clase">{{ accionInfo(a.accion).texto }}</span></td>
+              <td class="wrap"><code>{{ a.registroId }}</code></td>
+              <td class="nw"><button type="button" class="mini" [attr.aria-expanded]="abierto() === a.id" (click)="alternar(a.id)">{{ abierto() === a.id ? 'Ocultar' : 'Ver cambio' }}</button></td>
+            </tr>
+            @if (abierto() === a.id) {
+              <tr class="detalle-fila"><td colspan="6">
+                @let cambios = dif(a);
+                @if (cambios.length === 0) { <p class="chico suave">No hay diferencias que mostrar.</p> }
+                @else {
+                  <table class="difs">
+                    <thead><tr><th>Campo</th><th>Antes</th><th>Después</th></tr></thead>
+                    <tbody>@for (c of cambios; track c.campo) { <tr><td><b>{{ c.campo }}</b></td><td class="wrap antes">{{ c.antes }}</td><td class="wrap despues">{{ c.despues }}</td></tr> }</tbody>
+                  </table>
+                }
+              </td></tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="paginas">
+      <span class="chico suave">{{ d.total }} movimientos · página {{ pagina() + 1 }} de {{ paginas() }}</span>
+      <div class="acciones">
+        <button type="button" class="mini-b" [disabled]="pagina() === 0" (click)="ir(pagina() - 1)">Anterior</button>
+        <button type="button" class="mini-b" [disabled]="pagina() + 1 >= paginas()" (click)="ir(pagina() + 1)">Siguiente</button>
+      </div>
+    </div>
+  }
+} @else if (!fallo()) { <p class="carga" aria-live="polite">Cargando…</p> }

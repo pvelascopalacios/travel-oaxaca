@@ -1,0 +1,85 @@
+<header class="no-imprimir cabecera">
+  <a class="enlace" [routerLink]="['/negocios', id()]">← Resumen</a>
+  <h1>Reporte mensual</h1>
+  <p class="suave">Cuánta gente vio tu ficha y qué hizo, mes por mes. Puedes imprimirlo o guardarlo como PDF.</p>
+</header>
+
+@if (cargando()) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo()) {
+  <p class="aviso no-imprimir" role="alert">No pudimos cargar los reportes. Inténtalo de nuevo en un momento.</p>
+} @else if (!reportes().length) {
+  <p class="vacio no-imprimir">Todavía no hay reportes. El primero se genera al terminar el mes.</p>
+} @else {
+  <div class="controles no-imprimir">
+    <label>Mes
+      <select [value]="elegido()" (change)="elegir($any($event.target).value)">
+        @for (r of reportes(); track r.id) { <option [value]="r.id">{{ nombreMes(r) }}</option> }
+      </select>
+    </label>
+    <button type="button" class="boton" (click)="imprimir()">Imprimir o guardar PDF</button>
+  </div>
+
+  @if (resumen(); as r) {
+    <article class="hoja" aria-label="Reporte mensual">
+      <div class="cab">
+        <div class="marca">Travel Oaxaca<small>por Oaxaca Explora</small></div>
+        <div class="periodo"><strong>Reporte mensual</strong><br /><span>{{ rango(r) }}</span></div>
+      </div>
+      <div><h2>{{ negocio()?.nombreComercial }}</h2></div>
+
+      <div class="gran">
+        <div class="cifra">
+          <b>{{ numero(r.vistas) }}</b><span>Vistas de tu ficha</span>
+          @if (dVistas(); as d) { <em class="delta" [class.baja]="d < 0">{{ flecha(d) }} % vs. mes anterior</em> }
+        </div>
+        <div class="cifra">
+          <b>{{ numero(r.contactos) }}</b><span>Contactos</span>
+          @if (dContactos(); as d) { <em class="delta" [class.baja]="d < 0">{{ flecha(d) }} % vs. mes anterior</em> }
+        </div>
+        @if (r.tasa !== null) {
+          <div class="cifra">
+            <b>{{ r.tasa }} %</b><span>De vista a contacto</span>
+            @if (dTasa(); as d) { <em class="delta" [class.baja]="d < 0">{{ flecha(d) }} pts</em> }
+          </div>
+        }
+      </div>
+
+      @if (r.acciones.length) {
+        <div>
+          <h3>Qué hicieron</h3>
+          <div class="tabla-caja">
+            <table>
+              <thead><tr><th scope="col">Acción</th><th scope="col">Veces</th></tr></thead>
+              <tbody>
+                @for (a of r.acciones; track a.tipo) { <tr><td>{{ nombreAccion(a.tipo) }}</td><td>{{ numero(a.total) }}</td></tr> }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      @if (r.origenes.length) {
+        <div>
+          <h3>De dónde llegaron</h3>
+          <div class="tabla-caja">
+            <table>
+              <thead><tr><th scope="col">Origen</th><th scope="col">Vistas</th><th scope="col">Contactos</th><th scope="col">Del total</th></tr></thead>
+              <tbody>
+                @for (o of r.origenes; track o.clave) {
+                  <tr>
+                    <td>{{ origenes[o.clave] ?? o.clave }}</td>
+                    <td>{{ numero(o.vistas) }}</td>
+                    <td>{{ numero(o.contactos) }}</td>
+                    <td class="pct"><span class="barra"><i [style.width.%]="o.porcentaje"></i></span> {{ o.porcentaje }} %</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+      <p class="pie">{{ generado(r) }} Contactos = toques de WhatsApp, llamadas, «cómo llegar» y guardados.</p>
+    </article>
+  }
+}

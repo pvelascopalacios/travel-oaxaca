@@ -1,0 +1,89 @@
+<header class="cab">
+  <h1>Métricas</h1>
+  <p class="suave chico">Qué tanto se ven y se contactan los negocios. «Contactos» suma toques de WhatsApp, llamadas, «cómo llegar» y guardados.</p>
+</header>
+
+<div class="filtros-f">
+  <div class="periodos" role="group" aria-label="Periodo">
+    @for (d of periodos; track d) { <button type="button" class="mini-b" [class.ok]="dias === d" [attr.aria-pressed]="dias === d" (click)="periodo(d)">{{ d }} días</button> }
+  </div>
+  <label>Región <select name="regionId" [(ngModel)]="regionId" (change)="cargar()"><option value="">Todas</option>@for (r of regiones(); track r.id) { <option [value]="r.id">{{ r.nombre }}</option> }</select></label>
+  <label>Categoría <select name="categoriaId" [(ngModel)]="categoriaId" (change)="cargar()"><option value="">Todas</option>@for (c of categorias(); track c.id) { <option [value]="c.id">{{ c.etiqueta }}</option> }</select></label>
+</div>
+
+@if (fallo(); as f) { <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p> }
+@else if (datos(); as d) {
+  <p class="chico suave" aria-live="polite">{{ cargando() ? 'Actualizando…' : 'Del ' + fecha(d.desde) + ' al ' + fecha(d.hasta) }}</p>
+  <div class="kpis">
+    <div class="kpi fijo"><span class="l">Vistas</span><b>{{ d.vistas | number }}</b>@if (vVistas(); as v) { <span class="var" [class]="v.tono">{{ v.texto }}</span> }</div>
+    <div class="kpi fijo"><span class="l">Contactos</span><b>{{ d.contactos | number }}</b>@if (vContactos(); as v) { <span class="var" [class]="v.tono">{{ v.texto }}</span> }</div>
+    <div class="kpi fijo"><span class="l">Tasa de contacto</span><b>{{ tasa(d.tasaContacto) }}</b>@if (vTasa(); as v) { <span class="var" [class]="v.tono">{{ v.texto }}</span> }</div>
+    <div class="kpi fijo"><span class="l">Dispositivos activos</span><b>{{ d.dispositivosActivos | number }}</b></div>
+  </div>
+  @if (d.negocios.length === 0) {
+    <app-vacio tipo="filtro" icono="chart" [titulo]="'Sin movimiento en ' + dias + ' días'">
+      <p>Ningún negocio tuvo vistas ni contactos{{ regionId || categoriaId ? ' con estos filtros' : '' }} en el periodo.</p>
+      <div class="vacio-e-bs">
+        @if (dias < periodos[periodos.length - 1]) { <button type="button" class="vb p" (click)="periodo(periodos[periodos.length - 1])">Ver {{ periodos[periodos.length - 1] }} días</button> }
+        @if (regionId || categoriaId) { <button type="button" class="vb" [class.p]="dias >= periodos[periodos.length - 1]" (click)="quitarFiltros()">Quitar filtros</button> }
+      </div>
+    </app-vacio>
+  }
+  @else {
+    <div class="dos">
+      <section class="tarjeta rank" aria-labelledby="h-rank">
+        <div class="fila-cab"><h2 id="h-rank">Negocios que más se contactan</h2><span class="chico suave leyenda"><i class="v"></i> vistas <i class="c"></i> contactos</span></div>
+        <ol>
+          @for (n of top(); track n.negocioId; let i = $index) {
+            <li>
+              <span class="pos">{{ i + 1 }}</span>
+              <div class="cuerpo-r">
+                <a [routerLink]="['/negocios', n.negocioId]">{{ n.nombre }}</a>
+                <span class="chico suave">{{ n.categoriaClave }}</span>
+                <span class="barras" aria-hidden="true"><i class="v" [style.width.%]="ancho(n.vistas, maxVistas())"></i><i class="c" [style.width.%]="n.contactos ? ancho(n.contactos, maxVistas()) : 0"></i></span>
+              </div>
+              <span class="cifra"><b>{{ n.contactos | number }}</b><small>contactos</small></span>
+              <span class="cifra"><b>{{ tasa(n.tasaContacto) }}</b><small>tasa</small></span>
+            </li>
+          }
+        </ol>
+      </section>
+      <div class="lado-m">
+        <section class="tarjeta" aria-labelledby="h-llamar">
+          <h2 id="h-llamar">Buenos para llamar</h2>
+          <p class="chico suave">Tienen vistas, pero {{ umbral }} días o más sin un contacto.</p>
+          @if (paraLlamar().length === 0) { <p class="vacio">Ninguno por ahora.</p> }
+          @else {
+            <ul class="llamar">
+              @for (n of paraLlamar(); track n.negocioId) {
+                <li><a [routerLink]="['/negocios', n.negocioId]"><span class="cuerpo-r"><b>{{ n.nombre }}</b><small class="suave">{{ n.categoriaClave }} · {{ n.vistas | number }} vistas</small></span><span class="st cambio">{{ n.ultimoContacto ? n.diasSinContacto + ' días' : 'Nunca' }}</span></a></li>
+              }
+            </ul>
+          }
+        </section>
+        <section class="tarjeta" aria-labelledby="h-embudo">
+          <h2 id="h-embudo">Del interés al contacto</h2>
+          <div class="embudo"><div class="e1">{{ d.vistas | number }} vistas</div><div class="e2" [style.width.%]="d.tasaContacto === null ? 0 : ancho(d.tasaContacto * 100, 100)">{{ d.contactos | number }} contactos</div></div>
+          <p class="chico suave">Contactos = toques de WhatsApp, llamadas, «cómo llegar» y guardados.</p>
+        </section>
+      </div>
+    </div>
+    <div class="tarjeta tabla">
+      <table>
+        <thead><tr><th>Negocio</th><th>Categoría</th><th class="num">Vistas</th><th class="num">Contactos</th><th class="num">Tasa</th><th>Último contacto</th><th class="num">Días sin contacto</th></tr></thead>
+        <tbody>
+          @for (n of d.negocios; track n.negocioId) {
+            <tr>
+              <td class="wrap"><a [routerLink]="['/negocios', n.negocioId]">{{ n.nombre }}</a></td>
+              <td>{{ n.categoriaClave }}</td>
+              <td class="num">{{ n.vistas | number }}</td><td class="num">{{ n.contactos | number }}</td><td class="num">{{ tasa(n.tasaContacto) }}</td>
+              <td>{{ n.ultimoContacto ? fecha(n.ultimoContacto) : 'Nunca' }}</td>
+              <td class="num"><span [class.st]="alerta(n.diasSinContacto, n.vistas)" [class.cambio]="alerta(n.diasSinContacto, n.vistas)">{{ n.diasSinContacto }}</span></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="chico suave">Se marca en ámbar a quien tiene vistas pero {{ umbral }} días o más sin un contacto.</p>
+  }
+} @else { <p class="carga" aria-live="polite">Cargando…</p> }

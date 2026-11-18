@@ -1,0 +1,211 @@
+<div class="contenedor pagina">
+  <nav class="migas" [attr.aria-label]="i18n.t('inicio')">
+    <a [routerLink]="['/', i18n.lang()]">{{ i18n.t('inicio') }}</a>
+    <span aria-hidden="true">›</span>
+    <span>{{ i18n.t(grupo.titulo) }}</span>
+  </nav>
+
+  <header class="cabecera">
+    <h1>{{ titulo() }}</h1>
+    <p class="cuenta" aria-live="polite">
+      @if (!cargando() && !fallo()) {
+        {{ cuantos() }}
+      } @else if (cargando()) {
+        {{ i18n.t('cargando') }}
+      }
+    </p>
+  </header>
+
+  @if (chips().length) {
+    <div class="chips" role="group" [attr.aria-label]="i18n.t('filtroTipo')">
+      @for (c of chips(); track c.id) {
+        <button type="button" class="chip" [class.activo]="c.activo" [attr.aria-pressed]="c.activo" (click)="cambiar(c.cambio)">
+          {{ c.texto }} @if (c.total !== null) { <span class="n">{{ c.total }}</span> }
+        </button>
+      }
+    </div>
+  }
+
+  <div class="barra">
+    <div class="barra-izq">
+      @if (modo() === 'negocios') {
+        <button type="button" class="pildora filtros-btn" [class.solo-movil]="!filtros().mapa" (click)="hoja.set(true)">
+          <span aria-hidden="true">⚙</span> {{ i18n.t('filtros') }}@if (nFiltros() > 0) { ({{ nFiltros() }}) }
+        </button>
+        <label class="orden">
+          <span class="visualmente-oculto">{{ i18n.t('ordenar') }}</span>
+          <select [attr.aria-label]="i18n.t('ordenar')" [value]="filtros().orden" (change)="cambiarOrden($any($event.target).value)">
+            @for (o of ordenes; track o) {
+              <option [value]="o" [selected]="filtros().orden === o">{{ i18n.tDinamico('orden', o) }}</option>
+            }
+          </select>
+        </label>
+      }
+      @if (modo() === 'lugares') {
+        <button type="button" class="pildora" [class.activa]="filtros().gratis" [attr.aria-pressed]="filtros().gratis" (click)="cambiar({ gratis: !filtros().gratis })">
+          {{ i18n.t('entradaGratis') }}
+        </button>
+      }
+      @if (modo() === 'eventos') {
+        <button type="button" class="pildora" [class.activa]="fechaActiva('todos')" (click)="atajoFecha('todos')">{{ i18n.t('todo') }}</button>
+        <button type="button" class="pildora" [class.activa]="fechaActiva('hoy')" (click)="atajoFecha('hoy')">{{ i18n.t('atajoHoy') }}</button>
+        <button type="button" class="pildora" [class.activa]="fechaActiva('fin')" (click)="atajoFecha('fin')">{{ i18n.t('atajoFinDeSemana') }}</button>
+        <button type="button" class="pildora" [class.activa]="filtros().gratis" [attr.aria-pressed]="filtros().gratis" (click)="cambiar({ gratis: !filtros().gratis })">
+          {{ i18n.t('soloGratis') }}
+        </button>
+      }
+    </div>
+    <div class="barra-der">
+      @if (modo() !== 'eventos') {
+        <button type="button" class="pildora" [class.activa]="filtros().cerca" [attr.aria-pressed]="filtros().cerca" (click)="alternarCerca()">
+          {{ i18n.t('cercaDeMi') }}
+        </button>
+      }
+      @if (conMapa()) {
+        <button type="button" class="pildora oscura" (click)="alternarMapa()">
+          {{ filtros().mapa ? '☰ ' + i18n.t('lista') : i18n.t('mapa') }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (etiquetas().length) {
+    <ul class="etiquetas">
+      @for (e of etiquetas(); track e.texto) {
+        <li>
+          <button type="button" (click)="cambiar(e.quitar)" [attr.aria-label]="e.texto + ' ✕'">{{ e.texto }} <span aria-hidden="true">✕</span></button>
+        </li>
+      }
+      <li><button type="button" class="borrar" (click)="borrarTodo()">{{ i18n.t('borrarTodo') }}</button></li>
+    </ul>
+  }
+
+  @if (avisoUbicacion()) {
+    <p class="aviso-error" role="status">{{ i18n.t('ubicacionNo') }}</p>
+  }
+
+  @if (fallo()) {
+    <p class="aviso-error" role="alert">{{ i18n.t('errorCarga') }}</p>
+  }
+
+  <div class="cuerpo" [class.con-mapa]="filtros().mapa && conMapa()" [class.con-lateral]="modo() === 'negocios' && !filtros().mapa">
+    @if (modo() === 'negocios' && !filtros().mapa) {
+      <aside class="lateral" [attr.aria-label]="i18n.t('filtros')">
+        <app-panel-filtros
+          prefijo="l"
+          [filtros]="filtros()"
+          [tipos]="tipos()"
+          [servicios]="serviciosGrupo()"
+          [conPrecio]="conPrecio()"
+          [conAbierto]="conAbierto()"
+          [conIdiomas]="conIdiomas()"
+          (cambio)="cambiar($event)"
+        />
+      </aside>
+    }
+
+    <section class="resultados" [class.cargando]="cargando()">
+      @if (cargando() && cargado0()) {
+        <div class="rejilla">
+          @for (i of esqueleto; track i) {
+            <div class="esqueleto"></div>
+          }
+        </div>
+      } @else {
+        @switch (modo()) {
+          @case ('negocios') {
+            @if (filtros().mapa || grupo.clave === 'comer') {
+              <div class="filas">
+                @for (n of negocios(); track n.id) {
+                  <div [id]="'neg-' + n.id" (mouseenter)="elegido.set(n.id)">
+                    <app-fila-negocio [negocio]="n" [elegida]="elegido() === n.id" [resaltar]="filtros().servicios" />
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="rejilla">
+                @for (n of negocios(); track n.id) {
+                  <app-tarjeta-negocio [negocio]="n" [resaltar]="filtros().servicios" />
+                }
+              </div>
+            }
+          }
+          @case ('lugares') {
+            <div class="rejilla">
+              @for (l of lugares(); track l.id) {
+                <app-tarjeta-lugar [lugar]="l" />
+              }
+            </div>
+          }
+          @case ('eventos') {
+            <div class="dias">
+              @for (d of eventosPorDia(); track d.dia) {
+                <section>
+                  <h2 class="dia">{{ d.texto }}</h2>
+                  <div class="rejilla">
+                    @for (e of d.lista; track e.id) {
+                      <app-tarjeta-evento [evento]="e" />
+                    }
+                  </div>
+                </section>
+              }
+            </div>
+          }
+        }
+
+        @if (vacio()) {
+          <div class="vacio">
+            <h2>{{ i18n.t('sinResultadosFiltros') }}</h2>
+            <p>{{ i18n.t('probarOtro') }}</p>
+            @if (hayFiltros()) {
+              <button type="button" class="boton" (click)="borrarTodo()">{{ i18n.t('quitarFiltros') }}</button>
+            }
+          </div>
+        }
+
+        @if (hayMas()) {
+          <div class="mas">
+            <p class="suave">{{ i18n.tf('mostrandoDe', { a: cargadosN(), b: total() }) }}</p>
+            <button type="button" class="boton secundario" [disabled]="cargandoMas()" (click)="verMas()">
+              {{ cargandoMas() ? i18n.t('cargando') : i18n.t('verMas') }}
+            </button>
+          </div>
+        }
+      }
+    </section>
+
+    @if (filtros().mapa && conMapa()) {
+      <div class="mapa-col">
+        <app-mapa [pines]="pines()" [extras]="extras()" [elegido]="elegido()" (elegir)="elegirPin($event)" (zona)="buscarZona($event)" />
+        @if (negocioElegido(); as n) {
+          <div class="seleccion-movil"><app-fila-negocio [negocio]="n" [elegida]="true" [resaltar]="filtros().servicios" /></div>
+        }
+      </div>
+    }
+  </div>
+</div>
+
+@if (hoja()) {
+  <div class="hoja-fondo" (click)="hoja.set(false)"></div>
+  <section class="hoja" role="dialog" aria-modal="true" [attr.aria-label]="i18n.t('filtros')">
+    <header>
+      <h2>{{ i18n.t('filtros') }}</h2>
+      <button type="button" class="borrar" (click)="borrarTodo()">{{ i18n.t('borrarTodo') }}</button>
+    </header>
+    <div class="hoja-cuerpo">
+      <app-panel-filtros
+        prefijo="h"
+        [filtros]="filtros()"
+        [tipos]="tipos()"
+        [servicios]="serviciosGrupo()"
+        [conPrecio]="conPrecio()"
+        [conAbierto]="conAbierto()"
+        [conIdiomas]="conIdiomas()"
+        (cambio)="cambiar($event)"
+      />
+    </div>
+    <footer>
+      <button type="button" class="boton" (click)="hoja.set(false)">{{ i18n.tf('verNResultados', { n: total() }) }}</button>
+    </footer>
+  </section>
+}

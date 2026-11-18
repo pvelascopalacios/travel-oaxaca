@@ -1,0 +1,7 @@
+@use '../comun';
+td.wrap { white-space: normal; overflow-wrap: anywhere; min-width: 110px; max-width: 260px; }
+td.nw { white-space: nowrap; }
+td.err { color: var(--rojo-texto); font-size: 0.8rem; }
+.filtro { display: grid; gap: 4px; font-weight: 600; font-size: 0.84rem; }
+.tabs a { cursor: pointer; }
+.enlace { background: none; border: 0; padding: 0; color: var(--grana); font: inherit; text-decoration: underline; cursor: pointer; }

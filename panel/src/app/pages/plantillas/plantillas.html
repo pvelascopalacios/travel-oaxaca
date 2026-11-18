@@ -1,0 +1,50 @@
+<header class="cab">
+  <h1>Plantillas</h1>
+  <p class="suave chico">Los textos que se mandan a usuarios y negocios. Usa solo las variables permitidas, escritas pegadas: <code>{{ '{{nombre}}' }}</code>.</p>
+</header>
+
+@if (aviso(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+@if (fallo(); as f) { <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p> }
+@else if (lista() === null) { <p class="carga" aria-live="polite">Cargando…</p> }
+@else if (lista()!.length === 0) { <p class="vacio">No hay plantillas.</p> }
+@else {
+  <div class="dos">
+    <div class="tarjeta tabla">
+      <table>
+        <thead><tr><th>Plantilla</th><th>Canal</th><th>Idioma</th><th>Estado</th></tr></thead>
+        <tbody>
+          @for (p of lista(); track p.id) {
+            <tr [class.sel]="elegida()?.id === p.id"><td class="wrap"><button type="button" class="enlace" (click)="abrir(p)">{{ p.clave }}</button></td><td>{{ p.canal }}</td><td>{{ p.idioma }}</td><td><span class="st" [class]="p.activa ? 'ok' : 'gris'">{{ p.activa ? 'Activa' : 'Apagada' }}</span></td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (elegida(); as p) {
+      <form class="tarjeta" (ngSubmit)="guardar()" novalidate>
+        <h2>{{ p.clave }} <span class="st nueva">{{ p.canal }} · {{ p.idioma }}</span></h2>
+        <label [class.error]="errores()['asunto']">Asunto @if (p.canal === 'correo') { * } <span class="ayuda">(máx. {{ asuntoMax }})</span>
+          <input name="asunto" maxlength="260" [(ngModel)]="asunto" />@if (errores()['asunto']; as m) { <span class="msg">{{ m }}</span> }
+        </label>
+        <label [class.error]="errores()['cuerpo']">Mensaje * <span class="ayuda">({{ cuerpo.length }} de {{ cuerpoMax }})</span>
+          <textarea name="cuerpo" rows="9" [(ngModel)]="cuerpo"></textarea>@if (errores()['cuerpo']; as m) { <span class="msg">{{ m }}</span> }
+        </label>
+        <div>
+          <p class="chico suave">Variables permitidas (toca para agregarla al final del mensaje):</p>
+          <div class="chips-v">
+            @for (v of p.variables; track v) { <button type="button" class="mini" (click)="insertar(v)">{{ '{{' + v + '}}' }}</button> }
+            @if (p.variables.length === 0) { <span class="chico suave">Esta plantilla no usa variables.</span> }
+          </div>
+        </div>
+        <label class="casilla"><input type="checkbox" name="activa" [(ngModel)]="activa" /> Plantilla activa</label>
+        @if (errorApi(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+        <div class="barra-guardar">
+          <button type="submit" class="mini-b ok" [disabled]="trabajando() || !cambiada">{{ trabajando() ? 'Guardando…' : 'Guardar' }}</button>
+          <button type="button" class="mini-b" [disabled]="probando() || cambiada || p.canal !== 'correo' || !p.activa" (click)="probar()" [title]="cambiada ? 'Guarda primero los cambios' : ''">{{ probando() ? 'Enviando…' : 'Enviarme una prueba' }}</button>
+        </div>
+        @if (p.canal !== 'correo' || !p.activa) { <p class="nota">La prueba solo está disponible para correos activos.</p> }
+        @else if (cambiada) { <p class="nota">Guarda los cambios para poder enviar una prueba con el texto nuevo.</p> }
+      </form>
+    } @else { <p class="vacio">Elige una plantilla para editarla.</p> }
+  </div>
+}

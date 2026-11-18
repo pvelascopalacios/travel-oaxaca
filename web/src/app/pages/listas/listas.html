@@ -1,0 +1,59 @@
+<div class="contenedor pagina">
+  <header class="cabecera">
+    <div>
+      <h1>{{ i18n.t('listasTitulo') }}</h1>
+      <p class="suave">{{ i18n.t('listasTexto') }}</p>
+    </div>
+    <a class="enlace-vuelta" [routerLink]="['/', i18n.lang(), 'perfil']">{{ i18n.t('perfilIrAPerfil') }}</a>
+  </header>
+
+  @if (listas() === null) {
+    <p class="suave" aria-live="polite">{{ i18n.t('cargando') }}</p>
+  } @else {
+    @if (fallo()) {
+      <div class="tarjeta">
+        <p class="aviso" role="alert">{{ i18n.t('errorCarga') }}</p>
+        <button type="button" class="boton secundario" (click)="listas.set(null); cargar()">{{ i18n.t('perfilReintentar') }}</button>
+      </div>
+    } @else {
+      <div class="barra">
+        <p class="suave">{{ contador() }}</p>
+        @if (!abierto()) { <button type="button" class="boton" (click)="abrir()">+ {{ i18n.t('listaNueva') }}</button> }
+      </div>
+      @if (aviso(); as a) { <p class="aviso ok" role="status">{{ a }}</p> }
+
+      @if (abierto()) {
+        <section class="tarjeta" aria-labelledby="t-nueva">
+          <h2 id="t-nueva">{{ i18n.t('listaNueva') }}</h2>
+          <app-formulario-lista [ocupado]="enviando()" [errorApi]="error()" [conCancelar]="true" etiqueta="listaCrear" (enviar)="crear($event)" (cancelar)="abierto.set(false)" />
+        </section>
+      }
+
+      @if (ordenadas().length === 0 && !abierto()) {
+        <div class="tarjeta vacio">
+          <p>{{ i18n.t('listasVacio') }}</p>
+          <button type="button" class="boton" (click)="abrir()">+ {{ i18n.t('listaNueva') }}</button>
+        </div>
+      } @else {
+        <ul class="rejilla">
+          @for (l of ordenadas(); track l.id; let i = $index) {
+            <li>
+              <a class="lista" [routerLink]="['/', i18n.lang(), 'listas', l.id]">
+                <span [class]="banda(i)" aria-hidden="true"></span>
+                <span class="cuerpo">
+                  <strong>{{ l.nombre }}</strong>
+                  <span class="suave">{{ elementos(l) }}</span>
+                  <span class="etiquetas">
+                    @if (l.esItinerario) { <span class="etiqueta">{{ i18n.t('listaItinerarioEtiqueta') }}@if (dias(l); as d) { · {{ d }} }</span> }
+                    <span class="etiqueta" [class.ok]="l.publica">{{ i18n.t(l.publica ? 'listaPublicaEtiqueta' : 'listaPrivada') }}</span>
+                  </span>
+                  @if (fechas(l); as f) { <span class="suave pequeno">{{ f }}</span> }
+                </span>
+              </a>
+            </li>
+          }
+        </ul>
+      }
+    }
+  }
+</div>

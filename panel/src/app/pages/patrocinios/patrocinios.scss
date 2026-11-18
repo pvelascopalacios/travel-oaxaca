@@ -1,0 +1,18 @@
+@use '../comun';
+td.wrap { white-space: normal; overflow-wrap: anywhere; min-width: 140px; max-width: 280px; }
+td.nw { white-space: nowrap; }
+.filtros-f { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; label { display: grid; gap: 4px; font-weight: 600; font-size: 0.84rem; } }
+.cal-marco { overflow-x: auto; }
+.cal { min-width: 720px; display: grid; gap: 8px; }
+.cal-eje, .cal-fila { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 8px; align-items: start; }
+.cal-nombre { font-weight: 700; font-size: 0.84rem; padding-top: 6px; overflow-wrap: anywhere; }
+.cal-pista { position: relative; min-height: 22px; background: var(--cantera); border-radius: 8px; }
+.cal-eje .cal-pista { background: none; height: 18px; }
+.marca { position: absolute; top: 0; font-size: 0.7rem; color: var(--suave); white-space: nowrap; transform: translateX(2px); }
+.barra { position: absolute; height: 26px; border: 0; border-radius: 6px; background: var(--laguna); color: #fff; font: 600 0.74rem var(--fuente); padding: 0 8px; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;
+  &.prog { background: var(--ambar); color: var(--ambar-texto); border: 1.5px dashed var(--ocre); }
+  &.cancel { background: var(--cantera); color: var(--suave); text-decoration: line-through; border: 1px solid var(--linea); }
+  &.sel { outline: 3px solid var(--grana); outline-offset: 1px; } }
+.detalle { display: grid; gap: 10px; p { margin: 0; } }
+.confirma { display: grid; gap: 8px; padding: 10px; border: 1px dashed var(--grana); border-radius: 10px; p { margin: 0; } }
+.enlace { background: none; border: 0; padding: 0; color: var(--grana); font: inherit; text-decoration: underline; cursor: pointer; text-align: left; }

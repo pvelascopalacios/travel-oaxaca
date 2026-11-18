@@ -1,0 +1,93 @@
+<div class="contenedor pagina">
+  <h1>{{ titulo() }}</h1>
+
+  @if (!puedeBuscar()) {
+    <p class="suave">{{ i18n.t('buscarEscribe') }}</p>
+    <p class="etiqueta-seccion">{{ i18n.t('destinosPopulares') }}</p>
+    <ul class="destinos">
+      @for (d of destinos; track d) {
+        <li><button type="button" class="chip" (click)="buscarDestino(d)">{{ d }}</button></li>
+      }
+    </ul>
+  } @else {
+    <div class="barra">
+      @if (filtros().municipio) {
+        <button type="button" class="pildora activa" (click)="cambiar({ municipio: null, en: '' })" [attr.aria-label]="i18n.t('quitarLugar') + ': ' + filtros().en">
+          📍 {{ filtros().en || i18n.t('municipio') }} <span aria-hidden="true">✕</span>
+        </button>
+      }
+      <label class="orden">
+        <span class="visualmente-oculto">{{ i18n.t('ordenar') }}</span>
+        <select [attr.aria-label]="i18n.t('ordenar')" [value]="filtros().orden" (change)="cambiarOrden($any($event.target).value)">
+          @for (o of ordenes; track o) {
+            <option [value]="o" [selected]="filtros().orden === o">{{ i18n.tDinamico('orden', o) }}</option>
+          }
+        </select>
+      </label>
+      <button type="button" class="pildora" [class.activa]="filtros().abierto" [attr.aria-pressed]="filtros().abierto" (click)="cambiar({ abierto: !filtros().abierto })">
+        {{ i18n.t('abiertoAhora') }}
+      </button>
+      <button type="button" class="pildora" [class.activa]="filtros().cerca" [attr.aria-pressed]="filtros().cerca" (click)="cambiar({ cerca: !filtros().cerca })">
+        {{ i18n.t('cercaDeMi') }}
+      </button>
+    </div>
+
+    @if (avisoUbicacion()) {
+      <p class="aviso-error" role="status">{{ i18n.t('ubicacionNo') }}</p>
+    }
+    @if (fallo()) {
+      <p class="aviso-error" role="alert">{{ i18n.t('errorCarga') }}</p>
+    }
+    @if (cargando()) {
+      <p class="suave">{{ i18n.t('buscando') }}</p>
+    }
+    @if (sinNada()) {
+      <div class="vacio">
+        <h2>{{ i18n.t('sinResultados') }}</h2>
+        @if (filtros().abierto || filtros().cerca) {
+          <button type="button" class="boton" (click)="cambiar({ abierto: false, cerca: false, orden: 'relevancia' })">{{ i18n.t('quitarFiltros') }}</button>
+        }
+      </div>
+    }
+
+    @if (negocios().length) {
+      <section class="bloque">
+        <h2>{{ i18n.t('negociosSeccion') }} <span class="n">{{ totalNegocios() }}</span></h2>
+        <div class="rejilla">
+          @for (n of negocios(); track n.id) {
+            <app-tarjeta-negocio [negocio]="n" [resaltar]="filtros().servicios" />
+          }
+        </div>
+        @if (hayMas()) {
+          <div class="mas">
+            <button type="button" class="boton secundario" [disabled]="cargandoMas()" (click)="verMas()">
+              {{ cargandoMas() ? i18n.t('cargando') : i18n.t('verMas') }}
+            </button>
+          </div>
+        }
+      </section>
+    }
+
+    @if (lugares().length) {
+      <section class="bloque">
+        <h2>{{ i18n.t('lugaresSeccion') }}</h2>
+        <div class="rejilla">
+          @for (l of lugares(); track l.id) {
+            <app-tarjeta-lugar [lugar]="l" />
+          }
+        </div>
+      </section>
+    }
+
+    @if (eventos().length) {
+      <section class="bloque">
+        <h2>{{ i18n.t('eventosSeccion') }}</h2>
+        <div class="rejilla">
+          @for (e of eventos(); track e.id) {
+            <app-tarjeta-evento [evento]="e" />
+          }
+        </div>
+      </section>
+    }
+  }
+</div>

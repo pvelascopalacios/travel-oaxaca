@@ -1,0 +1,66 @@
+@if (noExiste()) {
+  <div class="contenedor caja">
+    <h1>{{ i18n.t('noEncontrada') }}</h1>
+    <p>{{ i18n.t('noEncontradaTexto') }}</p>
+    <a class="boton" [routerLink]="['/', i18n.lang()]">{{ i18n.t('volverInicio') }}</a>
+  </div>
+} @else {
+  <div class="contenedor pagina">
+    <nav class="migas" [attr.aria-label]="i18n.t('inicio')">
+      <a [routerLink]="['/', i18n.lang()]">{{ i18n.t('inicio') }}</a>
+      <span aria-hidden="true">›</span>
+      <span>{{ i18n.t('regionPagina') }}</span>
+    </nav>
+
+    @if (region(); as r) {
+      <header class="cabecera">
+        <p class="eyebrow">{{ i18n.t('regionPagina') }}</p>
+        <h1>{{ r.nombre }}</h1>
+        <p class="cuenta">{{ cuenta(r).join(' · ') }}</p>
+      </header>
+    } @else if (cargando()) {
+      <p class="cuenta" aria-live="polite">{{ i18n.t('cargando') }}</p>
+    }
+
+    @if (fallo() && !lugares().length && !negocios().length && !eventos().length) {
+      <p class="aviso-error">{{ i18n.t('errorCarga') }}</p>
+    }
+
+    @if (lugares().length) {
+      <section class="seccion">
+        <div class="seccion-cabecera"><h2>{{ i18n.t('regionLugares') }}</h2></div>
+        <div class="rejilla">
+          @for (l of lugares(); track l.id) {
+            <app-tarjeta-lugar [lugar]="l" />
+          }
+        </div>
+      </section>
+    }
+
+    @if (negocios().length) {
+      <section class="seccion">
+        <div class="seccion-cabecera"><h2>{{ i18n.t('regionNegocios') }}</h2></div>
+        <div class="rejilla">
+          @for (n of negocios(); track n.id) {
+            <app-tarjeta-negocio [negocio]="n" />
+          }
+        </div>
+      </section>
+    }
+
+    @if (eventos().length) {
+      <section class="seccion">
+        <div class="seccion-cabecera"><h2>{{ i18n.t('regionEventos') }}</h2></div>
+        <div class="rejilla">
+          @for (e of eventos(); track e.id) {
+            <app-tarjeta-evento [evento]="e" />
+          }
+        </div>
+      </section>
+    }
+
+    @if (vacia() && region() && !fallo()) {
+      <p class="vacia">{{ i18n.t('regionVacia') }}</p>
+    }
+  </div>
+}

@@ -1,0 +1,28 @@
+name: travel_oaxaca_app
+description: Travel Oaxaca - app para turistas (Android primero).
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.5.1
+  go_router: ^13.2.0
+  dio: ^5.4.3
+  flutter_secure_storage: ^9.2.2
+  google_fonts: ^6.2.1
+  url_launcher: ^6.3.1
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  geolocator: ^13.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true

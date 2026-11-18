@@ -1,0 +1,96 @@
+<div class="fila-cab saludo">
+  <div>
+    <h1>Hola{{ nombreUsuario() ? ', ' + nombreUsuario() : '' }}</h1>
+    <p class="suave">{{ resumenTexto() }}</p>
+  </div>
+  @if (!abierto()) {
+    <button type="button" class="boton" (click)="abrir()">+ Registrar un negocio</button>
+  }
+</div>
+
+@if (invitaciones().length || avisoInvitacion() || errorInvitacion()) {
+  <section class="invitaciones" aria-label="Invitaciones recibidas">
+    @if (avisoInvitacion(); as a) { <p class="aviso ok" role="status">{{ a }}</p> }
+    @if (errorInvitacion(); as m) { <p class="aviso" role="alert">{{ m }}</p> }
+    @for (i of invitaciones(); track i.id) {
+      <div class="invitacion tarjeta">
+        <div>
+          <strong>{{ i.invitadoPorNombre || 'Alguien' }} te invitó a administrar «{{ i.negocioNombre }}»</strong>
+          <p class="suave chico">Como colaborador podrás editar la ficha, las fotos, las opciones y las promociones. {{ fecha(i.creadoEn) }}</p>
+        </div>
+        <div class="acciones">
+          <button type="button" class="boton" [disabled]="!!respondiendoId()" (click)="responder(i, true)">Aceptar</button>
+          <button type="button" class="boton secundario" [disabled]="!!respondiendoId()" (click)="responder(i, false)">Rechazar</button>
+        </div>
+      </div>
+    }
+  </section>
+}
+
+@if (abierto()) {
+  <form class="registrar tarjeta" (ngSubmit)="crear()" novalidate aria-label="Registrar un negocio">
+    <h2>Registrar un negocio</h2>
+    <div class="campos">
+      <label [class.error]="campo('nombreComercial')">Nombre del negocio
+        <input type="text" name="nombre" maxlength="150" required autocomplete="off" [(ngModel)]="nombre" />
+        @if (campo('nombreComercial'); as m) { <span class="msg">{{ m }}</span> }
+      </label>
+      <label [class.error]="campo('categoriaId')">Categoría
+        <select name="categoria" required [(ngModel)]="categoriaId">
+          <option value="" disabled>Elige una categoría</option>
+          @for (c of categorias(); track c.id) { <option [value]="c.id">{{ c.etiqueta }}</option> }
+        </select>
+        @if (campo('categoriaId'); as m) { <span class="msg">{{ m }}</span> }
+      </label>
+      <label [class.error]="campo('municipioId')">Municipio
+        <input type="search" name="filtro" placeholder="Escribe para buscar tu municipio" autocomplete="off" [ngModel]="filtro()" (ngModelChange)="filtro.set($event)" />
+        <select name="municipio" required [(ngModel)]="municipioId" [attr.size]="filtro().trim() ? 4 : null">
+          <option value="" disabled>Elige el municipio</option>
+          @for (m of municipiosVisibles(); track m.id) { <option [value]="m.id">{{ m.nombre }}</option> }
+        </select>
+        @if (campo('municipioId'); as m) { <span class="msg">{{ m }}</span> }
+      </label>
+    </div>
+    @if (catalogoFallo()) { <p class="aviso" role="alert">No pudimos cargar las categorías o los municipios. Recarga la página.</p> }
+    @if (error().general; as g) { <p class="aviso" role="alert">{{ g }}</p> }
+    <div class="acciones">
+      <button type="submit" class="boton" [disabled]="enviando()">Crear en borrador</button>
+      <button type="button" class="boton secundario" (click)="cancelar()">Cancelar</button>
+    </div>
+    <p class="suave chico">Nace como borrador: no se ve en el sitio hasta que lo envíes a revisión y el equipo lo apruebe.</p>
+  </form>
+}
+
+@if (lista() === null) {
+  <p class="carga" aria-live="polite">Cargando tus negocios…</p>
+} @else {
+  @if (fallo()) {
+    <p class="aviso" role="alert">No pudimos cargar tus negocios. <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+  } @else if (!lista()!.length) {
+    <div class="vacio tarjeta">
+      <h2>Aún no tienes negocios</h2>
+      <p class="suave">Registra el primero y completa su ficha. Cuando esté lista, la envías a revisión.</p>
+      @if (!abierto()) { <div><button type="button" class="boton" (click)="abrir()">Registrar mi negocio</button></div> }
+    </div>
+  }
+  <h2 class="solo-lectores">Mis negocios</h2>
+  <div class="lista">
+    @for (n of lista(); track n.id) {
+      <a class="neg" [routerLink]="['/negocios', n.id]">
+        <span class="portada" [style.background-image]="n.portadaUrl ? 'url(' + n.portadaUrl + ')' : null" [attr.data-tono]="tono(n.nombreComercial)">
+          <span class="estado" [class]="estadoInfo(n.estado).clase">{{ estadoInfo(n.estado).texto }}</span>
+        </span>
+        <span class="cuerpo">
+          <span class="logo" aria-hidden="true">{{ inicial(n.nombreComercial) }}</span>
+          <h3>{{ n.nombreComercial }}</h3>
+          <span class="suave chico">{{ categoriaDe(n) }}@if (rolTexto(n.rolMiembro)) { · {{ rolTexto(n.rolMiembro) }} }</span>
+          <span class="avance">
+            <span class="anillo" [style.--p]="n.puntajeFicha" [attr.aria-label]="'Ficha completa al ' + n.puntajeFicha + ' por ciento'"><b>{{ n.puntajeFicha }}%</b></span>
+            <span class="chico"><strong>Tu ficha</strong><br /><span class="suave">{{ n.puntajeFicha >= 90 ? 'Lista para crecer' : 'Aún falta completarla' }}</span></span>
+          </span>
+          <span class="boton chico-b" [class.secundario]="n.estado !== 'borrador'">{{ accion(n.estado) }}</span>
+        </span>
+      </a>
+    }
+  </div>
+}

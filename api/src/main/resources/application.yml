@@ -1,0 +1,105 @@
+# Configuración base. Los secretos NUNCA van aquí: se leen de variables de entorno.
+spring:
+  application:
+    name: travel-oaxaca-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/traveloaxaca}
+    username: ${DB_USER:traveloaxaca}
+    password: ${DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:10}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    # Con baseline-on-migrate, una base que ya trae tablas (por ejemplo la extensión PostGIS)
+    # pero no tiene historial de Flyway se marca en esta versión y se aplican las siguientes.
+    #   - Base nueva: déjalo en 0 y Flyway aplica V1 a V8.
+    #   - Tu base actual, donde ya corriste las 8 migraciones a mano: FLYWAY_BASELINE_VERSION=8
+    baseline-on-migrate: true
+    baseline-version: ${FLYWAY_BASELINE_VERSION:0}
+  jackson:
+    time-zone: UTC
+    default-property-inclusion: non_null
+  mvc:
+    problemdetails:
+      enabled: false
+
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+  error:
+    include-message: never
+    include-stacktrace: never
+
+management:
+  health:
+    mail:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /api/docs/json
+  swagger-ui:
+    path: /api/docs
+
+app:
+  version: '@project.version@'
+  cors:
+    # Orígenes permitidos separados por coma (portal de negocios y panel de administración).
+    origenes: ${CORS_ORIGENES:http://localhost:4200}
+  seguridad:
+    # Llave para firmar los tokens (mínimo 32 caracteres). En producción es OBLIGATORIA.
+    # Si queda vacía se genera una al arrancar (solo desarrollo): al reiniciar, los tokens de acceso
+    # vigentes dejan de servir y la app los renueva con el token de renovación.
+    jwt-secreto: ${JWT_SECRETO:}
+    acceso-minutos: 15
+    renovacion-dias: 30
+    verificacion-horas: 24
+    recuperacion-minutos: 60
+    clave-longitud-minima: 10
+    limite-ingresos-fallidos: 5
+    ventana-ingresos-minutos: 15
+    limite-registros-hora: 10
+    limite-recuperaciones-hora: 3
+    limite-dispositivos-hora: 60
+  urls:
+    portal: ${URL_PORTAL:http://localhost:4200}
+  correo:
+    # consola = los correos se escriben en el registro (desarrollo); smtp = se envían de verdad.
+    modo: ${CORREO_MODO:consola}
+    remitente: ${CORREO_REMITENTE:no-responder@traveloaxaca.local}
+    worker: true
+  almacenamiento:
+    # s3 = S3 real o MinIO; prueba = memoria (solo para pruebas automáticas).
+    modo: ${ALMACEN_MODO:s3}
+    bucket: ${S3_BUCKET:traveloaxaca-medios}
+    region: ${S3_REGION:us-east-1}
+    # Dirección que usa la API para hablar con S3. Vacía = el S3 de AWS. Con MinIO: http://minio:9000
+    endpoint: ${S3_ENDPOINT:}
+    # Dirección que ve el navegador (URL firmada de subida). Vacía = igual que endpoint.
+    endpoint-publico: ${S3_ENDPOINT_PUBLICO:}
+    acceso-llave: ${S3_ACCESO_LLAVE:}
+    acceso-secreto: ${S3_ACCESO_SECRETO:}
+    # true para MinIO (bucket en la ruta y no en el dominio).
+    ruta-estilo: ${S3_RUTA_ESTILO:false}
+    # Base para armar la URL con que se muestran las fotos (CDN o el propio bucket).
+    url-publica: ${S3_URL_PUBLICA:http://localhost:9000/traveloaxaca-medios}
+    subida-vigencia-minutos: 5
+    imagen-max-bytes: 10485760
+    limite-subidas-hora: 60
+  admin-inicial:
+    # Si no existe ningún administrador, se crea este al arrancar.
+    correo: ${ADMIN_CORREO:}
+    clave: ${ADMIN_CLAVE:}
+
+logging:
+  pattern:
+    level: '%5p [%X{solicitudId:-}]'

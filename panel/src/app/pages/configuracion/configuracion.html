@@ -1,0 +1,46 @@
+<header class="cab">
+  <h1>Configuración</h1>
+  <p class="suave chico">Ajustes que cambian cómo se comporta la plataforma. Aplican de inmediato. Aquí solo se cambian valores: las claves las define la API.</p>
+</header>
+
+@if (aviso(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+@if (fallo(); as f) { <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p> }
+@else if (lista() === null) { <p class="carga" aria-live="polite">Cargando…</p> }
+@else {
+  @for (g of grupos(); track g.clave) {
+    <section class="tarjeta">
+      <h2>{{ g.texto }}</h2>
+      <ul>
+        @for (c of g.items; track c.clave) {
+          <li class="cfg" [class.error]="errores()[c.clave]">
+            <div class="info">
+              <b>{{ c.clave }}</b>
+              @if (sensible(c.clave)) { <span class="st cambio">Sensible</span> }
+              <p class="chico suave">{{ c.descripcion }}</p>
+              <p class="chico suave">Valores: {{ rango(c) }}@if (c.actualizadoEn) { · cambiada {{ fecha(c.actualizadoEn) }} }</p>
+            </div>
+            <div class="control">
+              @if (esBooleano(c)) {
+                <button type="button" role="switch" class="interruptor" [class.on]="valores[c.clave] === 'true'" [attr.aria-checked]="valores[c.clave] === 'true'" [attr.aria-label]="c.clave" [disabled]="guardando() !== null" (click)="alternar(c)"><i></i><span>{{ valores[c.clave] === 'true' ? 'Activado' : 'Apagado' }}</span></button>
+              } @else if (esLargo(c)) {
+                <textarea rows="5" [name]="'v-' + c.clave" [attr.name]="'v-' + c.clave" [(ngModel)]="valores[c.clave]" (ngModelChange)="quitar(c.clave)"></textarea>
+              } @else {
+                <input [name]="'v-' + c.clave" [attr.name]="'v-' + c.clave" [attr.inputmode]="c.tipo === 'entero' ? 'numeric' : 'text'" [(ngModel)]="valores[c.clave]" (ngModelChange)="quitar(c.clave)" (keydown.enter)="pedir(c)" />
+              }
+              @if (errores()[c.clave]; as m) { <span class="msg" role="alert">{{ m }}</span> }
+              @if (!esBooleano(c) && cambiado(c) && confirmando() !== c.clave) {
+                <div class="acciones"><button type="button" class="mini-b ok" [disabled]="guardando() !== null" (click)="pedir(c)">Guardar</button><button type="button" class="mini-b" (click)="descartar(c)">Descartar</button></div>
+              }
+              @if (confirmando() === c.clave) {
+                <div class="confirma">
+                  <p class="chico">Este ajuste es sensible y cambia lo que ve el público. ¿Aplicar ahora el valor <b>{{ valores[c.clave] }}</b>?</p>
+                  <div class="acciones"><button type="button" class="mini-b mal" [disabled]="guardando() !== null" (click)="guardar(c)">{{ guardando() === c.clave ? 'Guardando…' : 'Sí, aplicar' }}</button><button type="button" class="mini-b" (click)="descartar(c)">No</button></div>
+                </div>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+}

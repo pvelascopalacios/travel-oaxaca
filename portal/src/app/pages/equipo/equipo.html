@@ -1,0 +1,62 @@
+@if (cargando() && !miembros().length) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else {
+  <header class="cab">
+    <div class="fila-cab">
+      <h1>{{ ficha()?.nombreComercial ?? 'Equipo' }}</h1>
+      @if (ficha(); as n) { <span class="estado" [class]="estadoNegocio(n.estado).clase">{{ estadoNegocio(n.estado).texto }}</span> }
+    </div>
+    <p class="suave">Equipo</p>
+  </header>
+
+  <section class="tarjeta" aria-label="Equipo">
+    <h2>Quién administra este negocio</h2>
+    <p class="suave chico">Los colaboradores pueden editar la ficha, las fotos, las opciones y las promociones. Solo el propietario invita y quita personas.</p>
+    @if (aviso(); as a) { <p class="aviso ok" role="status">{{ a }}</p> }
+    @if (error(); as m) { <p class="aviso" role="alert">{{ m }}</p> }
+
+    <ul>
+      @for (m of lista(); track m.usuarioId) {
+        <li class="miembro" [class.ocupada]="trabajandoId() === m.usuarioId">
+          <span class="avatar" aria-hidden="true">{{ iniciales(m) }}</span>
+          <div class="datos">
+            <strong>{{ m.nombre || m.correo }}</strong>
+            @if (m.nombre) { <span class="suave chico">{{ m.correo }}</span> }
+            <div class="meta">
+              <span class="etiqueta">{{ rol(m.rol) }}</span>
+              <span class="estado" [class]="estadoMiembro(m.estado).clase">{{ estadoMiembro(m.estado).texto }}</span>
+            </div>
+          </div>
+          @if (esDueno() && m.rol !== 'propietario' && !soloLectura()) {
+            <button type="button" class="mini-b mal" [disabled]="!!trabajandoId()" (click)="pedirQuitar(m.usuarioId)">{{ m.estado === 'invitada' ? 'Cancelar invitación' : 'Quitar' }}</button>
+          }
+          @if (confirmandoId() === m.usuarioId) {
+            <div class="confirma" role="alertdialog" aria-label="Confirmar">
+              <p>@if (m.estado === 'invitada') { ¿Cancelar la invitación a {{ m.correo }}? } @else { ¿Quitar a {{ m.nombre || m.correo }} del equipo? Perderá el acceso a este negocio. }</p>
+              <div class="fila">
+                <button type="button" class="mini-b mal" [disabled]="!!trabajandoId()" (click)="quitar(m)">{{ m.estado === 'invitada' ? 'Sí, cancelar' : 'Sí, quitar' }}</button>
+                <button type="button" class="mini-b" (click)="confirmandoId.set(null)">Mantener</button>
+              </div>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+
+  @if (esDueno() && !soloLectura()) {
+    <form class="tarjeta" (ngSubmit)="invitar()" novalidate>
+      <h2>Invitar a alguien</h2>
+      <label [class.error]="errorCorreo()">Correo de la persona
+        <input type="email" name="correo" autocomplete="off" [ngModel]="correo()" (ngModelChange)="correo.set($event)" placeholder="persona@correo.com" />
+        @if (errorCorreo(); as m) { <span class="msg">{{ m }}</span> }
+      </label>
+      <p class="suave chico">Debe tener una cuenta en Travel Oaxaca con el correo verificado. Recibirá la invitación en «Mis negocios» y podrá aceptarla o rechazarla. Puedes enviar hasta 5 invitaciones al día.</p>
+      <div><button type="submit" class="boton" [disabled]="invitando()">{{ invitando() ? 'Enviando…' : 'Enviar invitación' }}</button></div>
+    </form>
+  } @else if (!esDueno()) {
+    <p class="aviso" role="status">Solo el propietario puede invitar o quitar personas del equipo.</p>
+  }
+}

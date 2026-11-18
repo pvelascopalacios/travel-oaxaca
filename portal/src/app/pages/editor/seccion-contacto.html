@@ -1,0 +1,74 @@
+<fieldset class="bloque" [disabled]="soloLectura()">
+  <div class="tarjeta">
+    <div class="fila-cab">
+      <h2>Contacto</h2>
+      <button type="button" class="boton secundario" [disabled]="filas().length >= maxContactos" (click)="agregarContacto()">+ Agregar contacto</button>
+    </div>
+    @for (f of filas(); track $index) {
+      <div class="fila-c" [class.error]="erroresFila()[$index]">
+        <select [attr.aria-label]="'Tipo de contacto ' + ($index + 1)" [ngModel]="f.tipo" (ngModelChange)="cambiarFila($index, { tipo: $event })" [name]="'t' + $index">
+          @for (t of tipos; track t.valor) { <option [value]="t.valor">{{ t.texto }}</option> }
+        </select>
+        <input [attr.aria-label]="'Dato de contacto ' + ($index + 1)" [type]="f.tipo === 'correo' ? 'email' : 'text'" [placeholder]="ejemplo(f.tipo)" maxlength="300" [name]="'v' + $index"
+          [ngModel]="f.valor" (ngModelChange)="cambiarFila($index, { valor: $event })" (blur)="acomodar($index)" />
+        <label class="principal"><input type="checkbox" [name]="'p' + $index" [ngModel]="f.esPrincipal" (ngModelChange)="cambiarFila($index, { esPrincipal: $event })" /> Principal</label>
+        <button type="button" class="enlace" (click)="quitarContacto($index)">Quitar</button>
+        @if (erroresFila()[$index]; as m) { <span class="msg error-fila">{{ m }}</span> }
+      </div>
+    } @empty {
+      <p class="suave">Aún no tienes contactos. Agrega al menos un WhatsApp o un teléfono para poder enviar tu ficha a revisión.</p>
+    }
+    <p class="suave chico">WhatsApp y teléfono con lada, por ejemplo +529511234567 (si escribes 10 dígitos se acomoda solo). Redes y sitio web con la dirección completa, empezando con https://</p>
+    <div class="acciones">
+      <button type="button" class="boton" [disabled]="envioContactos.trabajando() || soloLectura()" (click)="guardarContactos()">{{ envioContactos.trabajando() ? 'Guardando…' : 'Guardar contactos' }}</button>
+    </div>
+    <app-estado-guardado [envio]="envioContactos" />
+  </div>
+
+  <div class="tarjeta">
+    <h2>Servicios</h2>
+    @for (g of grupos(); track g.grupo) {
+      <div class="grupo">
+        <h3>{{ g.titulo }}</h3>
+        <div class="chips">
+          @for (s of g.items; track s.id) {
+            <button type="button" class="chip" [attr.aria-pressed]="elegidos().has(s.id)" (click)="alternarServicio(s.id)">{{ s.nombre }}</button>
+          }
+        </div>
+      </div>
+    } @empty {
+      <p class="suave">Cargando servicios…</p>
+    }
+    <div class="acciones">
+      <button type="button" class="boton" [disabled]="envioServicios.trabajando() || soloLectura()" (click)="guardarServicios()">{{ envioServicios.trabajando() ? 'Guardando…' : 'Guardar servicios' }}</button>
+    </div>
+    <app-estado-guardado [envio]="envioServicios" />
+  </div>
+
+  <div class="tarjeta">
+    <h2>Idiomas que atiendes</h2>
+    @for (n of niveles(); track n.idiomaCodigo) {
+      <div class="fila-i">
+        <strong>{{ nombreIdioma(n.idiomaCodigo) }}</strong>
+        <div class="segmento" role="group" [attr.aria-label]="'Nivel de ' + nombreIdioma(n.idiomaCodigo)">
+          <button type="button" [attr.aria-pressed]="n.nivel === 'basico'" (click)="nivel(n.idiomaCodigo, 'basico')">Básico</button>
+          <button type="button" [attr.aria-pressed]="n.nivel === 'fluido'" (click)="nivel(n.idiomaCodigo, 'fluido')">Fluido</button>
+        </div>
+        <button type="button" class="enlace" (click)="quitarIdioma(n.idiomaCodigo)">Quitar</button>
+      </div>
+    }
+    @if (niveles().length < maxIdiomas && disponibles().length) {
+      <div class="agregar">
+        <select aria-label="Idioma por agregar" name="nuevo-idioma" [ngModel]="nuevoIdioma()" (ngModelChange)="nuevoIdioma.set($event)">
+          <option value="">Elige un idioma</option>
+          @for (i of disponibles(); track i.codigo) { <option [value]="i.codigo">{{ i.nombre }}</option> }
+        </select>
+        <button type="button" class="boton secundario" [disabled]="!nuevoIdioma()" (click)="agregarIdioma()">Agregar</button>
+      </div>
+    }
+    <div class="acciones">
+      <button type="button" class="boton" [disabled]="envioIdiomas.trabajando() || soloLectura()" (click)="guardarIdiomas()">{{ envioIdiomas.trabajando() ? 'Guardando…' : 'Guardar idiomas' }}</button>
+    </div>
+    <app-estado-guardado [envio]="envioIdiomas" />
+  </div>
+</fieldset>

@@ -1,0 +1,124 @@
+<a class="volver" routerLink="/lugares">← Volver a lugares</a>
+
+@if (cargando()) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }}</p>
+} @else {
+  <header class="cab fila-cab">
+    <h1>{{ nuevo() ? 'Nuevo lugar' : nombre() || 'Editar lugar' }}</h1>
+    @if (!nuevo()) { <span class="st" [class]="estadoInfo(form.estado).clase">{{ estadoInfo(form.estado).texto }}</span> }
+  </header>
+  @if (aviso(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+
+  <form class="tarjeta" (ngSubmit)="guardar()" novalidate>
+    <div class="rejilla">
+      <label>Tipo *
+        <select name="tipo" [(ngModel)]="form.tipo">@for (t of tipos; track t.clave) { <option [value]="t.clave">{{ t.texto }}</option> }</select>
+      </label>
+      <label [class.error]="errores()['estado']">Estado *
+        <select name="estado" [(ngModel)]="form.estado">@for (e of estados; track e.clave) { <option [value]="e.clave">{{ e.texto }}</option> }</select>
+        @if (errores()['estado']; as m) { <span class="msg">{{ m }}</span> }
+      </label>
+      <app-selector-municipio titulo="Municipio (obligatorio para publicar)" [valor]="form.municipioId" [error]="errores()['municipioId'] ?? null" (cambio)="elegirMunicipio($event)" />
+      <app-selector-busqueda titulo="Es parte de otro lugar (un solo nivel)" placeholder="Buscar lugar padre…" [buscar]="buscarLugares" [elegido]="padre()" [error]="errores()['padreId'] ?? null" (cambio)="elegirPadre($event)" />
+    </div>
+    <label class="casilla"><input type="checkbox" name="destacado" [(ngModel)]="form.destacado" /> Lugar destacado</label>
+
+    <p class="sub">Ubicación en el mapa (obligatoria para publicar)</p>
+    <app-selector-mapa [latitud]="form.latitud" [longitud]="form.longitud" [centroLat]="centro().lat" [centroLng]="centro().lng" (elegido)="marcarPunto($event)" />
+    <div class="acciones">
+      <span class="chico suave">{{ form.latitud !== null ? 'Latitud ' + form.latitud + ' · Longitud ' + form.longitud : 'Toca el mapa para marcar el punto.' }}</span>
+      @if (form.latitud !== null) { <button type="button" class="mini" (click)="quitarPunto()">Quitar punto</button> }
+    </div>
+    @if (errores()['latitud']; as m) { <p class="aviso" role="alert">{{ m }}</p> }
+
+    <p class="sub">Textos por idioma</p>
+    <app-idiomas-pestanas [idiomas]="cat.idiomasOrdenados()" [activo]="idioma()" [conTexto]="conTexto()" [errores]="idiomasConError()" (cambio)="idioma.set($event)" />
+    @if (errores()['texto-' + idioma()]; as m) { <p class="aviso" role="alert">{{ m }}</p> }
+    <label [class.error]="(idioma() === 'es' && errores()['nombre']) || errores()['nombre-' + idioma()]">Nombre{{ idioma() === 'es' ? ' *' : '' }} <span class="ayuda">(hasta 200)</span>
+      <input name="nombre" maxlength="210" [(ngModel)]="textoActual().nombre" (ngModelChange)="cambio()" />
+      @if (idioma() === 'es' && errores()['nombre']; as m) { <span class="msg">{{ m }}</span> }
+      @if (errores()['nombre-' + idioma()]; as m) { <span class="msg">{{ m }}</span> }
+    </label>
+    <label>Resumen <span class="ayuda">(hasta 500)</span><textarea name="resumen" rows="2" maxlength="550" [(ngModel)]="textoActual().resumen"></textarea></label>
+    <label>Historia <span class="ayuda">(hasta 8000)</span><textarea name="historia" rows="6" maxlength="8100" [(ngModel)]="textoActual().historia"></textarea></label>
+    <div class="rejilla">
+      <label>Recomendaciones <span class="ayuda">(hasta 4000)</span><textarea name="recomendaciones" rows="4" maxlength="4100" [(ngModel)]="textoActual().recomendaciones"></textarea></label>
+      <label>Cómo llegar <span class="ayuda">(hasta 2000)</span><textarea name="comoLlegar" rows="4" maxlength="2100" [(ngModel)]="textoActual().comoLlegar"></textarea></label>
+    </div>
+    <label>Mejor época <span class="ayuda">(hasta 300)</span><input name="mejorEpoca" maxlength="310" [(ngModel)]="textoActual().mejorEpoca" /></label>
+
+    <p class="sub">Datos del lugar (verifícalos antes de publicar)</p>
+    <div class="rejilla">
+      <label>Entrada
+        <select name="entrada" [(ngModel)]="form.entrada" (ngModelChange)="cambio()">
+          <option value="">Sin dato</option><option value="gratis">Gratis</option><option value="con_costo">Con costo</option>
+        </select>
+      </label>
+      @if (conCosto()) {
+        <label [class.error]="errores()['costoNacional']">Costo nacional (MXN) <input name="costoNacional" inputmode="decimal" [(ngModel)]="form.costoNacional" />@if (errores()['costoNacional']; as m) { <span class="msg">{{ m }}</span> }</label>
+        <label [class.error]="errores()['costoExtranjero']">Costo extranjero (MXN) <input name="costoExtranjero" inputmode="decimal" [(ngModel)]="form.costoExtranjero" />@if (errores()['costoExtranjero']; as m) { <span class="msg">{{ m }}</span> }</label>
+      }
+      <label>Dificultad de acceso
+        <select name="dificultad" [(ngModel)]="form.dificultad"><option value="">Sin dato</option><option value="baja">Baja</option><option value="media">Media</option><option value="alta">Alta</option></select>
+      </label>
+      <label>Accesible
+        <select name="accesible" [(ngModel)]="form.accesible"><option value="">Sin dato</option><option value="si">Sí</option><option value="no">No</option></select>
+      </label>
+    </div>
+    <label [class.error]="errores()['horarioTexto']">Horario <span class="ayuda">(texto, hasta 200)</span>
+      <input name="horario" maxlength="210" placeholder="Ej. todos los días, 8:00 a 17:00" [(ngModel)]="form.horarioTexto" />
+      @if (errores()['horarioTexto']; as m) { <span class="msg">{{ m }}</span> }
+    </label>
+    <div class="chips" role="group" aria-label="Días abierto">
+      @for (d of dias; track d.n) {
+        <label><input type="checkbox" [name]="'dia' + d.n" [checked]="form.dias.includes(d.n)" (change)="alternarDia(d.n, $any($event.target).checked)" />{{ d.texto }}</label>
+      }
+    </div>
+
+    @if (errorApi(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+    <div class="barra-guardar">
+      <button type="submit" class="mini-b ok" [disabled]="trabajando()">{{ trabajando() ? 'Guardando…' : 'Guardar lugar' }}</button>
+      <a class="mini-b enlace-b" routerLink="/lugares">Cancelar</a>
+      @if (!nuevo()) {
+        @if (!archivando()) { <button type="button" class="mini-b mal" (click)="archivando.set(true)">Archivar</button> }
+        @else {
+          <span class="chico">¿Archivar este lugar? Deja de mostrarse.</span>
+          <button type="button" class="mini-b mal" [disabled]="trabajando()" (click)="archivar()">Sí, archivar</button>
+          <button type="button" class="mini-b" (click)="archivando.set(false)">No</button>
+        }
+      }
+    </div>
+  </form>
+
+  <section class="tarjeta" aria-label="Fotos">
+    <h2>Fotos <span class="chico suave">({{ fotos().length }} de 20 · la primera es la portada)</span></h2>
+    @if (nuevo()) {
+      <p class="nota">Guarda el lugar primero; después podrás subir sus fotos.</p>
+    } @else {
+      @if (fotos().length === 0) { <p class="vacio">Este lugar aún no tiene fotos.</p> }
+      <ul class="fotos-ord">
+        @for (f of fotos(); track f.medioId; let i = $index) {
+          <li>
+            @if (f.url; as u) { <img [src]="u" [alt]="'Foto ' + (i + 1)" /> } @else { <div class="sin-prev">Foto {{ i + 1 }}</div> }
+            @if (i === 0) { <span class="tag portada">Portada</span> }
+            <div class="mov">
+              <button type="button" class="mini" [disabled]="i === 0" (click)="moverFoto(i, -1)" aria-label="Mover antes">←</button>
+              <button type="button" class="mini" [disabled]="i === fotos().length - 1" (click)="moverFoto(i, 1)" aria-label="Mover después">→</button>
+              <button type="button" class="mini" (click)="quitarFoto(i)">Quitar</button>
+            </div>
+          </li>
+        }
+      </ul>
+      <app-subir-foto texto="+ Subir fotos" [multiple]="true" [cupo]="cupo()" [deshabilitado]="cupo() <= 0" (lista)="fotoLista($event)" />
+      @if (errorFotos(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+      @if (avisoFotos(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+      <div class="barra-guardar">
+        <button type="button" class="mini-b ok" [disabled]="trabajando() || !fotosSucias()" (click)="guardarFotos()">Guardar fotos</button>
+        @if (fotosSucias()) { <span class="chico suave">Hay cambios sin guardar en las fotos.</span> }
+      </div>
+      <p class="chico suave">Las fotos que sube el equipo se aprueban solas. Las ya guardadas se muestran como cuadro numerado porque la API no devuelve sus direcciones.</p>
+    }
+  </section>
+}

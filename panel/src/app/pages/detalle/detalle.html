@@ -1,0 +1,98 @@
+<a class="volver" routerLink="/revision">← Volver a la cola</a>
+
+@if (cargando()) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else if (datos(); as d) {
+  <header class="cab">
+    <div class="fila-cab">
+      <h1>{{ d.ficha.nombreComercial }}</h1>
+      <span class="st" [class]="tipoInfo(d.tipo).clase">{{ d.tipo === 'cambio' ? 'Cambios a una ficha publicada' : tipoInfo(d.tipo).texto }}</span>
+    </div>
+    <p class="suave chico">{{ categoria() }}@if (d.ficha.sucursales[0]?.municipioNombre; as m) { · {{ m }} }@if (d.enviadaEn) { · enviada {{ hora(d.enviadaEn) }} ({{ espera() }} de espera) }</p>
+  </header>
+
+  <div class="cols">
+    <div class="izq">
+      @if (!esNueva()) {
+        <section class="tarjeta" aria-label="Cambios propuestos">
+          <h2>Cambios propuestos</h2>
+          @if (filas().length === 0) {
+            <p class="vacio">Esta solicitud no trae cambios por campo. Revisa la ficha actual.</p>
+          } @else {
+            <div class="diff">
+              @for (f of filas(); track f.clave) {
+                <div class="cambio-fila">
+                  <span class="campo">{{ f.etiqueta }}</span>
+                  <div class="antes"><small>Antes</small>@for (l of f.antes; track $index) { <p>@if (l.nombre) { <b>{{ l.nombre }}:</b> } {{ l.texto }}</p> }</div>
+                  <div class="despues" [class.roto]="f.incompleto"><small>Después</small>@for (l of f.despues; track $index) { <p>@if (l.nombre) { <b>{{ l.nombre }}:</b> } {{ l.texto }}</p> }@if (f.incompleto) { <p class="chico">Cambio incompleto: recházalo con un motivo.</p> }</div>
+                </div>
+              }
+            </div>
+          }
+        </section>
+      }
+
+      <section class="tarjeta" aria-label="Ficha">
+        <h2>{{ esNueva() ? 'Ficha enviada' : 'Ficha actual' }}</h2>
+        <div class="datos">
+          @if (portada(); as p) { <img class="portada" [src]="p" alt="Portada de {{ d.ficha.nombreComercial }}" loading="lazy" /> }
+          <dl>
+            <div><dt>Puntaje de ficha</dt><dd>{{ d.ficha.puntajeFicha }} / 100</dd></div>
+            <div><dt>Categoría</dt><dd>{{ categoria() }}</dd></div>
+            @if (d.ficha.precioDesde !== null && d.ficha.precioDesde !== undefined) { <div><dt>Precio desde</dt><dd>${{ d.ficha.precioDesde }}@if (d.ficha.unidadPrecio) { · {{ d.ficha.unidadPrecio.replace('_', ' ') }} }</dd></div> }
+            @if (d.ficha.contactos.length) { <div><dt>Contactos</dt><dd>@for (c of d.ficha.contactos; track $index) { <span class="tag">{{ c.tipo }}: {{ c.valor }}</span> }</dd></div> }
+            @for (s of d.ficha.sucursales; track $index) { @if (s.direccionTexto) { <div><dt>Dirección</dt><dd>{{ s.direccionTexto }}</dd></div> } }
+          </dl>
+        </div>
+        @for (t of idiomasConTexto(); track t[0]) {
+          <div class="texto">
+            <h3>{{ idiomas[t[0]] ?? t[0] }}</h3>
+            @if (t[1].nombre) { <p><b>{{ t[1].nombre }}</b></p> }
+            @if (t[1].descripcionCorta) { <p>{{ t[1].descripcionCorta }}</p> }
+            @if (t[1].descripcion) { <p class="suave">{{ t[1].descripcion }}</p> }
+          </div>
+        }
+        @if (d.ficha.medios.length) {
+          <div class="fotos">
+            @for (m of d.ficha.medios; track m.medioId) {
+              <figure>
+                <img [src]="m.url" [alt]="m.pieTexto || 'Foto de la ficha'" loading="lazy" />
+                <figcaption><span class="st" [class]="m.moderacion === 'aprobado' ? 'ok' : m.moderacion === 'pendiente' ? 'cambio' : 'mal'">{{ m.moderacion === 'aprobado' ? 'Aprobada' : m.moderacion === 'pendiente' ? 'Pendiente' : 'Rechazada' }}</span></figcaption>
+              </figure>
+            }
+          </div>
+          <p class="chico suave">Las fotos pendientes se aprueban aparte, en la pestaña Fotos de la cola.</p>
+        }
+        @if (d.ficha.faltantes?.length) { <p class="aviso">Le faltan datos obligatorios: {{ d.ficha.faltantes!.join(', ') }}.</p> }
+      </section>
+    </div>
+
+    <div class="der">
+      <section class="tarjeta" aria-label="Quién la envió">
+        <h2>Quién la envió</h2>
+        @if (d.propietario; as p) {
+          <p><b>{{ p.nombre || p.correo }}</b></p>
+          @if (p.nombre) { <p class="suave chico">{{ p.correo }}</p> }
+        } @else {
+          <p class="suave">Este negocio no tiene propietario registrado.</p>
+        }
+      </section>
+
+      <section class="tarjeta" aria-label="Tu decisión">
+        <h2>Tu decisión</h2>
+        @if (errorAccion(); as m) { <p class="aviso" role="alert">{{ m }}</p> }
+        <div class="acciones">
+          <button type="button" class="boton" [disabled]="!!trabajando() || hayIncompletos()" (click)="aprobar()">{{ trabajando() === 'aprobar' ? 'Aprobando…' : esNueva() ? 'Aprobar y publicar' : 'Aprobar cambios' }}</button>
+          @if (!rechazando()) { <button type="button" class="boton mal" [disabled]="!!trabajando()" (click)="rechazando.set(true)">Rechazar…</button> }
+        </div>
+        @if (hayIncompletos()) { <p class="chico suave">Hay un cambio incompleto: solo se puede rechazar.</p> }
+        <p class="chico suave">Al aprobar{{ esNueva() ? ', la ficha se publica' : ', los cambios se publican' }} y se avisa al dueño. Al rechazar, se le envía tu motivo.</p>
+        @if (rechazando()) {
+          <app-rechazo [limite]="MOTIVO" ejemplo="Ej. El precio no coincide con el de tu página de Facebook. Confírmalo y vuelve a enviar." [trabajando]="trabajando() === 'rechazar'" (confirmar)="rechazar($event)" (cancelar)="rechazando.set(false)" />
+        }
+      </section>
+    </div>
+  </div>
+}

@@ -1,0 +1,198 @@
+:host {
+  display: block;
+}
+
+.pagina {
+  display: grid;
+  gap: 18px;
+  padding-block: 24px 72px;
+}
+
+.cabecera h1 {
+  margin: 0;
+  font: 800 clamp(1.8rem, 1.3rem + 2vw, 2.6rem) var(--fuente-titulo);
+}
+
+.cabecera p,
+.vacio p {
+  margin: 0;
+}
+
+.suave {
+  color: var(--tinta-suave);
+}
+
+.controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+
+  label {
+    display: grid;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    min-width: 0;
+  }
+
+  select {
+    min-height: 46px;
+    max-width: 100%;
+    padding: 0 14px;
+    border: 1.5px solid var(--linea);
+    border-radius: 12px;
+    background: var(--fondo);
+    color: var(--tinta);
+    font: 500 0.95rem var(--fuente);
+  }
+}
+
+.vacio {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+  padding: 28px;
+  border-radius: var(--radio);
+  background: var(--cantera);
+}
+
+/* La hoja siempre es clara, también en pantalla: es lo que se imprime. */
+.hoja {
+  display: grid;
+  gap: 22px;
+  width: 100%;
+  max-width: 780px;
+  margin-inline: auto;
+  padding: clamp(18px, 4vw, 44px);
+  border-radius: 8px;
+  background: #fff;
+  color: #1d2433;
+  box-shadow: var(--sombra-fuerte);
+  min-width: 0;
+
+  h2 {
+    margin: 0;
+    font: 800 1.6rem var(--fuente-titulo);
+    overflow-wrap: anywhere;
+  }
+
+  h3 {
+    margin: 0 0 6px;
+    font: 700 1rem var(--fuente-titulo);
+  }
+}
+
+.cab {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 20px;
+  padding-bottom: 14px;
+  border-bottom: 2px solid #1d2433;
+}
+
+.marca {
+  font: 800 1.05rem var(--fuente-titulo);
+
+  small {
+    display: block;
+    font: 400 0.74rem var(--fuente);
+    color: #5c6270;
+  }
+}
+
+.periodo {
+  text-align: right;
+  font-size: 0.9rem;
+
+  span {
+    color: #5c6270;
+    font-size: 0.84rem;
+  }
+}
+
+.gran {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.cifra {
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px;
+  border: 1px solid #dfe3dc;
+  border-radius: 10px;
+
+  b {
+    font: 800 2rem var(--fuente-titulo);
+  }
+
+  span {
+    font-size: 0.8rem;
+    color: #5c6270;
+  }
+}
+
+.delta {
+  font-style: normal;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #41692f;
+
+  &.baja {
+    color: #a5174f;
+  }
+}
+
+.tabla-caja {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th,
+td {
+  padding: 8px 6px;
+  border-bottom: 1px solid #dfe3dc;
+  text-align: left;
+}
+
+th:not(:first-child),
+td:not(:first-child) {
+  text-align: right;
+}
+
+.pct {
+  white-space: nowrap;
+}
+
+.barra {
+  display: inline-block;
+  width: 70px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 99px;
+  background: #eef1ea;
+  overflow: hidden;
+  vertical-align: middle;
+
+  i {
+    display: block;
+    height: 100%;
+    background: #17707b;
+  }
+}
+
+.pie {
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid #dfe3dc;
+  font-size: 0.76rem;
+  color: #5c6270;
+}

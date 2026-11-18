@@ -1,0 +1,233 @@
+<a class="volver" routerLink="/negocios">← Volver a negocios</a>
+
+@if (cargando()) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else if (ficha(); as n) {
+  <header class="tarjeta cab-neg">
+    @if (portada(); as p) {
+      <img class="logo" [src]="p" alt="" />
+    } @else {
+      <span class="logo av" aria-hidden="true" [style.background]="colorAvatar(n.nombreComercial).fondo" [style.color]="colorAvatar(n.nombreComercial).tinta">{{ iniciales(n.nombreComercial) }}</span>
+    }
+    <div class="quien">
+      <div class="fila-cab">
+        <h1>{{ n.nombreComercial }}</h1>
+        <span class="estado" [class]="estadoInfo(n.estado).clase">{{ estadoInfo(n.estado).texto }}</span>
+        @if (vigente(); as v) { <span class="st ok">Plan {{ v.planNombre }}</span> }
+        @else if (suscripciones() !== null) { <span class="st gris">Plan Gratis</span> }
+        @if (vigenteVerif()) { <span class="st nueva">Verificado</span> }
+      </div>
+      <p class="suave chico">{{ categoria() }}@if (municipio(); as m) { · {{ m }} } · puntaje {{ n.puntajeFicha }} / 100</p>
+    </div>
+    <div class="acciones">
+      @if (n.estado === 'en_revision' && puedeRevisar()) { <a class="mini-b ok enlace-b" [routerLink]="['/revision/negocios', n.id]">Revisar la ficha</a> }
+      @if (puedeCobrar()) { <a class="mini-b enlace-b" routerLink="/cobros" [queryParams]="{ tab: 'activar', negocio: n.id, nombre: n.nombreComercial }">{{ vigente() ? 'Renovar plan' : 'Activar un plan' }}</a> }
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="Secciones del negocio">
+    <a routerLink="." [queryParams]="{ tab: null }" [class.on]="tabActual() === 'ficha'">Ficha</a>
+    <a routerLink="." [queryParams]="{ tab: 'plan' }" [class.on]="tabActual() === 'plan'">Plan y pagos</a>
+    <a routerLink="." [queryParams]="{ tab: 'verificacion' }" [class.on]="tabActual() === 'verificacion'">Verificación</a>
+  </nav>
+
+  @if (tabActual() === 'ficha') {
+    <div class="cols">
+      <div class="izq">
+        <section class="tarjeta" aria-label="Datos del negocio">
+          <h2>Datos del negocio</h2>
+          <dl class="rejilla-datos">
+            <div><dt>Categoría</dt><dd>{{ categoria() }}</dd></div>
+            @if (n.precioDesde !== null && n.precioDesde !== undefined) { <div><dt>Precio desde</dt><dd>${{ n.precioDesde }}@if (n.unidadPrecio) { · {{ n.unidadPrecio.replace('_', ' ') }} }</dd></div> }
+            @for (s of n.sucursales; track $index) { @if (s.direccionTexto) { <div><dt>Dirección</dt><dd>{{ s.direccionTexto }}</dd></div> } }
+            @if (n.contactos.length) { <div><dt>Contactos</dt><dd>@for (c of n.contactos; track $index) { <span class="tag">{{ c.tipo }}: {{ c.valor }}</span> }</dd></div> }
+          </dl>
+          @for (t of idiomasConTexto(); track t[0]) {
+            <div class="texto">
+              <h3>{{ idiomas[t[0]] ?? t[0] }}</h3>
+              @if (t[1].descripcionCorta) { <p>{{ t[1].descripcionCorta }}</p> }
+              @if (t[1].descripcion) { <p class="suave chico">{{ t[1].descripcion }}</p> }
+            </div>
+          }
+        </section>
+        <section class="tarjeta" aria-label="Fotos">
+          <h2>Fotos <span class="suave chico">· {{ n.medios.length }}</span></h2>
+          @if (n.medios.length) {
+            <div class="fotos">
+              @for (m of n.medios; track m.medioId) {
+                <figure>
+                  <img [src]="m.url" [alt]="m.pieTexto || 'Foto de ' + n.nombreComercial" loading="lazy" />
+                  @if (m.esPortada) { <figcaption><span class="st nueva">Portada</span></figcaption> }
+                </figure>
+              }
+            </div>
+          } @else {
+            <app-vacio tipo="nuevo" icono="foto" titulo="Este negocio aún no tiene fotos">
+              <p>Sin foto aprobada, la ficha no se muestra en el sitio. Pídele al dueño que suba al menos una desde su portal.</p>
+            </app-vacio>
+          }
+        </section>
+      </div>
+
+      <div class="der">
+        <section class="tarjeta" aria-label="Salud de la ficha">
+          <h2>Salud de la ficha</h2>
+          <div class="puntos"><b>{{ n.puntajeFicha }}</b><span class="suave">de 100</span></div>
+          <div class="barra-p" role="img" [attr.aria-label]="'Ficha completa al ' + porcentaje(n.puntajeFicha) + ' por ciento'"><i [style.width.%]="porcentaje(n.puntajeFicha)" [style.background]="puntajeColor(n.puntajeFicha)"></i></div>
+          @if (n.faltantes?.length) {
+            <ul class="falta">
+              @for (x of n.faltantes; track $index) { <li class="no">Falta: {{ x }}</li> }
+            </ul>
+          } @else { <p class="ok-aviso">No le falta nada por completar.</p> }
+        </section>
+        <section class="tarjeta" aria-label="Resumen rápido">
+          <h2>Resumen rápido</h2>
+          <dl class="resumen">
+            <div><dt>Plan</dt><dd>@if (vigente(); as v) { {{ v.planNombre }} · {{ diasPlan() }} } @else if (suscripciones() !== null) { Gratis } @else { … }</dd></div>
+            <div><dt>Verificación</dt><dd>@if (vigenteVerif(); as v) { Vigente@if (v.vigenteHasta) { hasta {{ fecha(v.vigenteHasta) }} } } @else if (verificaciones() !== null) { Sin verificación vigente } @else { … }</dd></div>
+            <div><dt>Estado</dt><dd>{{ estadoInfo(n.estado).texto }}</dd></div>
+          </dl>
+        </section>
+      </div>
+    </div>
+  }
+
+  @if (tabActual() === 'plan') {
+    <section class="tarjeta" aria-label="Plan">
+      @if (falloPlan(); as m) {
+        <p class="aviso" role="alert">{{ m }}</p>
+      } @else if (suscripciones() === null) {
+        <p class="carga">Cargando plan…</p>
+      } @else {
+        @if (avisoPlan(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+        @if (vigente(); as v) {
+          <div class="plan-vigente">
+            <div>
+              <h2>Plan {{ v.planNombre }} <span class="st" [class]="estSus(v.estado).clase">{{ estSus(v.estado).texto }}</span></h2>
+              <p class="suave chico">{{ periodo(v.periodo) }} · del {{ fecha(v.inicio) }} al {{ fecha(v.fin) }} · {{ diasPlan() }}@if (v.estado === 'gracia' && v.graciaHasta) { · gracia hasta el {{ fecha(v.graciaHasta) }} }</p>
+            </div>
+          </div>
+        } @else {
+          <h2>Plan Gratis</h2>
+          <p class="suave chico">Este negocio no tiene una suscripción de pago vigente.</p>
+        }
+
+        @if (puedeCobrar()) {
+          <div class="acciones">
+            <a class="mini-b ok enlace-b" routerLink="/cobros" [queryParams]="{ tab: 'activar', negocio: n.id, nombre: n.nombreComercial }">{{ vigente() ? 'Renovar o cambiar plan' : 'Activar un plan' }}</a>
+            @if (vigente() && !cancelando()) { <button type="button" class="mini-b mal" (click)="abrirCancelar()">Cancelar suscripción…</button> }
+          </div>
+          @if (cancelando()) {
+            <form class="cancelar" (ngSubmit)="cancelar()" novalidate>
+              <label [class.error]="errorMotivo()">Motivo de la cancelación <span class="ayuda">(hasta 300 caracteres)</span>
+                <textarea name="motivo" rows="2" [(ngModel)]="motivo" [maxlength]="350"></textarea>
+                @if (errorMotivo(); as m) { <span class="msg">{{ m }}</span> }
+              </label>
+              <p class="chico suave">El negocio vuelve al plan Gratis de inmediato.</p>
+              <div class="acciones">
+                <button type="submit" class="mini-b mal" [disabled]="trabajando()">{{ trabajando() ? 'Cancelando…' : 'Sí, cancelar suscripción' }}</button>
+                <button type="button" class="mini-b" [disabled]="trabajando()" (click)="cancelando.set(false)">No cancelar</button>
+              </div>
+            </form>
+          }
+        } @else {
+          <p class="chico suave">Solo ventas y administración pueden cambiar el plan.</p>
+        }
+
+        <h3>Historial de suscripciones</h3>
+        @if (ordenadas().length === 0) {
+          <p class="vacio">Sin suscripciones registradas.</p>
+        } @else {
+          <div class="tabla">
+            <table>
+              <thead><tr><th>Plan</th><th>Periodo</th><th>Desde</th><th>Hasta</th><th class="num">Monto</th><th>Estado</th></tr></thead>
+              <tbody>
+                @for (s of ordenadas(); track s.id) {
+                  <tr>
+                    <td>{{ s.planNombre }}</td><td>{{ periodo(s.periodo) }}</td><td class="nw">{{ fecha(s.inicio) }}</td><td class="nw">{{ fecha(s.fin) }}</td>
+                    <td class="num">{{ s.monto === null ? '—' : dinero(s.monto) }}</td>
+                    <td><span class="st" [class]="estSus(s.estado).clase">{{ estSus(s.estado).texto }}</span>@if (s.motivoCancelacion) { <small class="suave"> {{ s.motivoCancelacion }}</small> }</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </section>
+  }
+
+  @if (tabActual() === 'verificacion') {
+    <section class="tarjeta" aria-label="Verificación">
+      @if (falloVerif(); as m) {
+        <p class="aviso" role="alert">{{ m }}</p>
+      } @else if (verificaciones() === null) {
+        <p class="carga">Cargando verificaciones…</p>
+      } @else {
+        @if (vigenteVerif(); as v) {
+          <p class="banner ok-aviso" role="status"><b>Negocio verificado</b> por {{ metodoV(v.metodo) }} el {{ fecha(v.fecha) }}@if (v.vigenteHasta) { · vigente hasta el {{ fecha(v.vigenteHasta) }} }.</p>
+        } @else if (ultimaVerif(); as u) {
+          <p class="banner aviso">Sin verificación vigente. La última fue {{ u.resultado === 'aprobada' ? 'aprobada' : 'rechazada' }} el {{ fecha(u.fecha) }}@if (u.resultado === 'aprobada' && u.vigenteHasta) { y venció el {{ fecha(u.vigenteHasta) }} }.</p>
+        } @else {
+          <p class="banner vacio">Este negocio aún no se ha verificado.</p>
+        }
+
+        @if (avisoV(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+
+        @if (puedeVerificar()) {
+          <form class="verif" (ngSubmit)="verificar()" novalidate>
+            <h3>Registrar verificación</h3>
+            <div class="rejilla">
+              <label [class.error]="erroresV()['metodo']">Método
+                <select name="metodo" [(ngModel)]="form.metodo">
+                  @for (m of metodos; track m.clave) { <option [value]="m.clave">{{ m.texto }}</option> }
+                </select>
+                @if (erroresV()['metodo']; as m) { <span class="msg">{{ m }}</span> }
+              </label>
+              <label [class.error]="erroresV()['resultado']">Resultado
+                <select name="resultado" [(ngModel)]="form.resultado">
+                  <option value="aprobada">Aprobada</option>
+                  <option value="rechazada">Rechazada</option>
+                </select>
+              </label>
+              <label [class.error]="erroresV()['vigenteHasta']">Vigente hasta <span class="ayuda">(opcional)</span>
+                <input type="date" name="vigenteHasta" [(ngModel)]="form.vigenteHasta" [min]="hoy" />
+                @if (erroresV()['vigenteHasta']; as m) { <span class="msg">{{ m }}</span> }
+              </label>
+            </div>
+            <label [class.error]="erroresV()['notas']">Notas <span class="ayuda">(opcional, hasta 500)</span>
+              <textarea name="notas" rows="2" [(ngModel)]="form.notas" [maxlength]="550"></textarea>
+              @if (erroresV()['notas']; as m) { <span class="msg">{{ m }}</span> }
+            </label>
+            @if (errorApiV(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+            <div class="acciones"><button type="submit" class="mini-b ok" [disabled]="trabajando()">{{ trabajando() ? 'Guardando…' : 'Registrar verificación' }}</button></div>
+          </form>
+        } @else {
+          <p class="chico suave">Solo edición y administración registran verificaciones.</p>
+        }
+
+        <h3>Historial</h3>
+        @if ((verificaciones() ?? []).length === 0) {
+          <p class="vacio">Sin verificaciones registradas.</p>
+        } @else {
+          <div class="tabla">
+            <table>
+              <thead><tr><th>Fecha</th><th>Método</th><th>Resultado</th><th>Vigente hasta</th><th>Quién</th><th>Notas</th></tr></thead>
+              <tbody>
+                @for (v of verificaciones(); track v.id) {
+                  <tr>
+                    <td class="nw">{{ fecha(v.fecha) }}</td><td>{{ metodoV(v.metodo) }}</td>
+                    <td><span class="st" [class]="v.resultado === 'aprobada' ? 'ok' : 'mal'">{{ v.resultado === 'aprobada' ? 'Aprobada' : 'Rechazada' }}</span></td>
+                    <td class="nw">{{ v.vigenteHasta ? fecha(v.vigenteHasta) : '—' }}</td><td>{{ v.verificadaPorNombre || '—' }}</td><td>{{ v.notas || '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </section>
+  }
+}

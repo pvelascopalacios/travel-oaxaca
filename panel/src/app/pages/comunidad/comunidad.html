@@ -1,0 +1,110 @@
+<header class="cab">
+  <h1>Moderación de la comunidad</h1>
+  <p class="suave chico">Reseñas y comentarios pendientes o ocultos por el filtro automático, fotos de reseñas y reportes. Lo más antiguo primero.</p>
+</header>
+
+<nav class="tabs" aria-label="Tipos de elemento">
+  <a routerLink="/comunidad" [queryParams]="consulta({ tipo: null })" [class.on]="!tipoActual()">Todo @if (conteos()['resena'] !== undefined) { <i>{{ totalGeneral() }}</i> }</a>
+  @for (t of tipos; track t.clave) {
+    <a routerLink="/comunidad" [queryParams]="consulta({ tipo: t.clave })" [class.on]="tipoActual() === t.clave">{{ t.plural }} @if (conteos()[t.clave] !== undefined) { <i>{{ conteos()[t.clave] }}</i> }</a>
+  }
+</nav>
+
+<div class="filtro-negocio">
+  <app-selector-negocio titulo="Filtrar por negocio" [elegido]="negocioElegido()" (cambio)="elegirNegocio($event)" />
+</div>
+
+@if (aviso(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+
+@if (cargando() && items().length === 0) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else if (items().length === 0) {
+  @if (tipoActual() || negocioId()) {
+    <app-vacio tipo="filtro" icono="filtro" titulo="No hay nada por moderar con estos filtros">
+      <p>Prueba con todos los tipos y todos los negocios.</p>
+      <div class="vacio-e-bs"><a class="vb p" routerLink="/comunidad">Quitar filtros</a></div>
+    </app-vacio>
+  } @else {
+    <app-vacio tipo="ok" icono="check" titulo="Todo al día">
+      <p>No hay reseñas, comentarios ni reportes por moderar.</p>
+      <div class="vacio-e-bs"><a class="vb p" routerLink="/revision">Ver la cola de revisión</a></div>
+    </app-vacio>
+  }
+} @else {
+  <p class="atajos-ayuda suave chico"><kbd>J</kbd> <kbd>K</kbd> moverse · <kbd>P</kbd> publicar o aprobar · <kbd>O</kbd> ocultar · <kbd>R</kbd> rechazar</p>
+  <p class="leyenda chico suave"><span class="punto urg"></span> 3 o más reportes <span class="punto cambio"></span> más de 48 h esperando</p>
+  <div class="maestro">
+    <div class="tarjeta lista">
+      <ul>
+        @for (i of items(); track i.tipo + i.id; let n = $index) {
+          <li class="fila-c" [class.sel]="n === indice()" [class.ocupada]="trabajando() === i.id">
+            <button type="button" class="fila-boton" [attr.aria-current]="n === indice() ? 'true' : null" (click)="elegir(n)">
+              <span class="ico-tipo" [class]="'ico-tipo ' + i.tipo" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="icono(i.tipo)" /></svg></span>
+              <span class="quien">
+                <span class="linea"><b>{{ tipoTexto(i.tipo) }} · {{ estadoTexto(i.estado) }}</b>@if (i.reportes > 0 && !i.tipo.startsWith('reporte')) { <span class="tiempo" [class.urg]="i.reportes >= 3" [class.cambio]="i.reportes < 3">{{ i.reportes }} {{ i.reportes === 1 ? 'reporte' : 'reportes' }}</span> }</span>
+                <small class="corto">@if (i.resumen) { {{ i.resumen }} } @else if (i.tipo === 'foto') { Foto de reseña pendiente de revisar. } @else { Sin texto. }</small>
+              </span>
+              <span class="tiempo" [class]="'tiempo ' + urgencia(i)">{{ espera(i) }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+      <div class="paginas pie-lista">
+        <a class="mini-b enlace-b" [class.inactivo]="!hayAnterior()" routerLink="/comunidad" [queryParams]="consulta({ pagina: nPagina() > 1 ? '' + nPagina() : null })">← Anterior</a>
+        <span class="chico suave">{{ desde() }}–{{ hasta() }} de {{ total() }}</span>
+        <a class="mini-b enlace-b" [class.inactivo]="!haySiguiente()" routerLink="/comunidad" [queryParams]="consulta({ pagina: '' + (nPagina() + 2) })">Siguiente →</a>
+      </div>
+    </div>
+
+    @if (actual(); as i) {
+      <section class="tarjeta detalle-c" aria-live="polite" [class.ocupada]="trabajando() === i.id">
+        <div class="cab-detalle">
+          <div class="quien-d">
+            <span class="ico-tipo grande" [class]="'ico-tipo grande ' + i.tipo" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path [attr.d]="icono(i.tipo)" /></svg></span>
+            <div>
+              <h2>{{ tipoTexto(i.tipo) }} {{ estadoTexto(i.estado) }}</h2>
+              <p class="suave chico">Enviada {{ hora(i.creadoEn) }}@if (i.negocioId) { · <a class="enlace" [routerLink]="['/negocios', i.negocioId]">Ver negocio</a> }</p>
+            </div>
+          </div>
+          <div class="espera"><b>{{ espera(i) }}</b>@if (urgencia(i) === 'urg') { <span class="st urg">Urgente</span> } @else if (urgencia(i) === 'cambio') { <span class="st cambio">Lleva tiempo</span> }</div>
+        </div>
+        <div class="chips-d">
+          @if (i.reportes > 0 && !i.tipo.startsWith('reporte')) { <span class="tiempo" [class.urg]="i.reportes >= 3" [class.cambio]="i.reportes < 3">{{ i.reportes }} {{ i.reportes === 1 ? 'reporte' : 'reportes' }}</span> }
+          <span class="tiempo">Estado: {{ estadoTexto(i.estado) }}</span>
+        </div>
+        @if (i.resumen) { <p class="txt grande">{{ i.resumen }}</p> } @else if (i.tipo === 'foto') { <p class="txt grande suave">Foto de reseña pendiente de revisar. La API no entrega la imagen: revísala en el sitio.</p> }
+        @if (i.motivo && i.tipo !== 'reporte_ficha' && i.tipo !== 'reporte_contenido') { <p class="chico suave">Motivo registrado: {{ i.motivo }}</p> }
+        @if (i.tipo === 'reporte_ficha' && i.motivo) { <p class="chico suave">Motivo del reporte: {{ i.motivo }}</p> }
+        @if (i.tipo === 'reporte_contenido') { <p class="chico suave">Este reporte no dice cuál elemento es: la API solo da este resumen. Revisa las pestañas de reseñas, comentarios y fotos.</p> }
+        <div class="acciones">
+          @for (a of acciones(i); track a.accion) {
+            <button type="button" class="mini-b" [class.ok]="a.estilo === 'primaria'" [class.mal]="a.estilo === 'peligro'" [disabled]="trabajando() !== null" (click)="ejecutar(i, a)">{{ trabajando() === i.id && !a.pideMotivo ? 'Un momento…' : a.texto }} <kbd>{{ tecla(a.accion).toUpperCase() }}</kbd></button>
+          }
+        </div>
+        @if (confirmando() === i.id) {
+          <div class="confirma" role="alert">
+            <span>¿Rechazar este elemento? No se puede deshacer.</span>
+            <button type="button" class="mini-b mal" [disabled]="trabajando() !== null" (click)="enviarRechazo(i)">Sí, rechazar <kbd>R</kbd></button>
+            <button type="button" class="mini-b" (click)="confirmando.set(null)">Cancelar</button>
+          </div>
+        }
+        @if (rechazando() === i.id) {
+          <form class="motivo" (ngSubmit)="confirmarRechazo(i)" novalidate>
+            <label [class.error]="errorMotivo()">Motivo del rechazo * <span class="ayuda">({{ 5 }} a {{ motivoMax }} caracteres)</span>
+              <input name="motivo" autocomplete="off" maxlength="220" [(ngModel)]="motivo" />
+              @if (errorMotivo(); as m) { <span class="msg">{{ m }}</span> }
+            </label>
+            <div class="acciones">
+              <button type="submit" class="mini-b mal" [disabled]="trabajando() !== null">Confirmar rechazo</button>
+              <button type="button" class="mini-b" (click)="rechazando.set(null)">Cancelar</button>
+            </div>
+          </form>
+        }
+        @if (errorItem(); as e) { @if (e.id === i.id) { <p class="aviso" role="alert">{{ e.texto }}</p> } }
+        <p class="nota">Al resolver, pasa solo al siguiente caso. El texto se corta a 140 caracteres: la API no entrega el texto completo ni quién lo escribió.</p>
+      </section>
+    }
+  </div>
+}

@@ -1,0 +1,106 @@
+<div class="contenedor pagina">
+  @if (noExiste()) {
+    <app-no-existe />
+  } @else if (fallo()) {
+    <div class="tarjeta">
+      <p class="aviso" role="alert">{{ i18n.t('errorCarga') }}</p>
+      <button type="button" class="boton secundario" (click)="cargar()">{{ i18n.t('perfilReintentar') }}</button>
+    </div>
+  } @else if (lista(); as l) {
+    <a class="enlace-vuelta" [routerLink]="['/', i18n.lang(), 'listas']">← {{ i18n.t('listaVolver') }}</a>
+
+    <header class="tarjeta cab-lista">
+      <div class="titulo">
+        <h1>{{ l.nombre }}</h1>
+        <p class="suave">
+          {{ resumen(l) }}
+          <span class="etiqueta" [class.ok]="l.publica">{{ i18n.t(l.publica ? 'listaPublicaEtiqueta' : 'listaPrivada') }}</span>
+        </p>
+      </div>
+      <div class="acciones">
+        <button type="button" class="boton secundario chico" (click)="editando.set(!editando())">{{ i18n.t('listaEditar') }}</button>
+        @if (l.publica) {
+          <button type="button" class="boton secundario chico" (click)="copiarEnlace()">{{ i18n.t('listaCopiarEnlace') }}</button>
+        }
+        <button type="button" class="boton secundario chico peligro" (click)="confirmarBorrar.set(true)">{{ i18n.t('listaBorrar') }}</button>
+      </div>
+      @if (!l.publica) { <p class="suave pequeno">{{ i18n.t('listaEnlaceSoloPublica') }}</p> }
+      @if (enlaceManual(); as m) {
+        <label class="manual">{{ i18n.t('listaEnlaceManual') }}<input type="text" readonly [value]="m" (focus)="$any($event.target).select()" /></label>
+      }
+    </header>
+
+    @if (confirmarBorrar()) {
+      <div class="tarjeta" role="alertdialog" aria-labelledby="t-borrar">
+        <p id="t-borrar"><strong>{{ i18n.t('listaBorrarPregunta') }}</strong></p>
+        <div class="acciones">
+          <button type="button" class="boton peligroso" [disabled]="ocupado()" (click)="borrar()">{{ i18n.t('listaBorrarSi') }}</button>
+          <button type="button" class="boton secundario" (click)="confirmarBorrar.set(false)">{{ i18n.t('listaCancelar') }}</button>
+        </div>
+      </div>
+    }
+
+    @if (editando()) {
+      <section class="tarjeta" aria-labelledby="t-edit">
+        <h2 id="t-edit">{{ i18n.t('listaEditar') }}</h2>
+        <app-formulario-lista [valor]="valorFormulario()" etiqueta="listaGuardar" [ocupado]="guardandoLista()" [errorApi]="errorLista()" [conCancelar]="true" (enviar)="guardarLista($event)" (cancelar)="editando.set(false)" />
+      </section>
+    }
+
+    @if (aviso(); as a) { <p class="aviso ok" role="status">{{ a }}</p> }
+    @if (errorCambio(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+
+    @if (l.elementos.length === 0 && !l.esItinerario) {
+      <div class="tarjeta"><p class="suave">{{ i18n.t('listaVacia') }}</p></div>
+    } @else {
+      @for (g of grupos(); track g.dia) {
+        <section class="dia" [attr.aria-label]="tituloDia(g)">
+          @if (l.esItinerario) {
+            <h2>{{ tituloDia(g) }} @if (fechaDia(g); as f) { <span class="suave fecha">{{ f }}</span> }</h2>
+          }
+          @if (g.elementos.length === 0) {
+            <p class="suave pequeno">{{ i18n.t('listaDiaVacio') }}</p>
+          }
+          <ul class="elementos">
+            @for (e of g.elementos; track e.itemId; let primero = $first; let ultimo = $last) {
+              <li class="el">
+                <a class="foto" [routerLink]="enlaceElemento(e)" [attr.aria-label]="e.nombre">
+                  <app-imagen [url]="e.imagenUrl" [texto]="e.nombre" />
+                </a>
+                <div class="datos">
+                  <a class="nombre" [routerLink]="enlaceElemento(e)">{{ e.nombre }}</a>
+                  <span class="suave pequeno">{{ i18n.t(tipo(e)) }}</span>
+                  @if (notaDe() === e.itemId) {
+                    <div class="nota-edit">
+                      <textarea rows="2" [attr.maxlength]="maxNota" [placeholder]="i18n.t('listaNotaPlaceholder')" [attr.aria-label]="i18n.t('listaNota')" [(ngModel)]="notaTexto" [name]="'nota-' + e.itemId"></textarea>
+                      <div class="acciones">
+                        <button type="button" class="boton chico" [disabled]="ocupado()" (click)="guardarNota(e)">{{ i18n.t('listaGuardar') }}</button>
+                        <button type="button" class="boton secundario chico" (click)="notaDe.set(null)">{{ i18n.t('listaCancelar') }}</button>
+                      </div>
+                    </div>
+                  } @else if (e.nota) {
+                    <p class="nota">«{{ e.nota }}»</p>
+                  }
+                </div>
+                <div class="controles">
+                  <button type="button" class="mini" [attr.aria-label]="i18n.t('listaSubir')" [disabled]="primero || ocupado()" (click)="mover(g, e, -1)">↑</button>
+                  <button type="button" class="mini" [attr.aria-label]="i18n.t('listaBajar')" [disabled]="ultimo || ocupado()" (click)="mover(g, e, 1)">↓</button>
+                  @if (l.esItinerario) {
+                    <select class="mini" [attr.aria-label]="i18n.t('listaCambiarDia')" [disabled]="ocupado()" (change)="cambiarDia(e, $any($event.target).value)">
+                      @for (d of diasPosibles(); track d) { <option [value]="d" [selected]="e.dia === d">{{ i18n.tf('listaDia', { n: d }) }}</option> }
+                      <option value="" [selected]="e.dia == null">{{ i18n.t('listaSinDia') }}</option>
+                    </select>
+                  }
+                  <button type="button" class="mini" (click)="editarNota(e)">{{ i18n.t('listaNotaEditar') }}</button>
+                  <button type="button" class="mini peligro" [disabled]="ocupado()" (click)="quitar(e)">{{ i18n.t('listaQuitar') }}</button>
+                </div>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    }
+  } @else {
+    <p class="suave" aria-live="polite">{{ i18n.t('cargando') }}</p>
+  }
+</div>

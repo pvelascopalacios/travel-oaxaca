@@ -1,0 +1,7 @@
+@use '../comun';
+.tipos { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.tipos .t { all: unset; box-sizing: border-box; display: grid; gap: 2px; padding: 12px; border: 1.5px solid var(--linea); border-radius: 12px; background: var(--papel); cursor: pointer; min-height: 56px; &.on { border-color: var(--grana); background: var(--aviso); } b { font: 700 0.95rem var(--fuente-titulo); } &:focus-visible { outline: 2px solid var(--grana); } }
+.foto-fila { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 14px; align-items: start; }
+.foto-datos { display: grid; gap: 10px; min-width: 0; }
+.foto-vacia.error { border-color: var(--grana); color: var(--grana); }
+@media (max-width: 640px) { .foto-fila { grid-template-columns: minmax(0, 1fr); } }

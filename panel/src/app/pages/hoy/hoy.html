@@ -1,0 +1,61 @@
+<header class="cab">
+  <h1>{{ saludo() }}</h1>
+  <p class="suave">Esto es lo que espera hoy. Toca una tarjeta para ir directo.</p>
+</header>
+
+<section class="tarjetas" aria-label="Pendientes">
+  @for (t of tarjetas(); track t.ruta) {
+    <a class="kpi" [routerLink]="t.ruta" [class.atencion]="t.tono === 'atencion' && (t.valor ?? 0) > 0" [class.ok]="t.valor === 0">
+      <span class="t">{{ t.titulo }}</span>
+      <span class="n">{{ t.valor ?? '—' }}</span>
+      <span class="d">{{ t.valor === 0 ? 'Todo en orden' : t.detalle }}</span>
+    </a>
+  }
+</section>
+
+<div class="doble">
+  @if (revisa()) {
+    <section class="tarjeta sec-espera" aria-labelledby="h-espera">
+      <div class="fila-cab">
+        <h2 id="h-espera">Lo que lleva más tiempo esperando</h2>
+        <a class="enlace-chico" routerLink="/revision">Ver la cola</a>
+      </div>
+      @if (cargando()) {
+        <p class="carga">Cargando…</p>
+      } @else if (fallo(); as f) {
+        <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargarEspera()">Reintentar</button></p>
+      } @else if (esperando().length === 0) {
+        <app-vacio tipo="ok" icono="check" titulo="Nada esperando revisión">
+          <p>Buen momento para mover ventas o revisar cobros.</p>
+          <div class="vacio-e-bs">
+            @if ((pendientes.prospectos() ?? 0) > 0) { <a class="vb p" routerLink="/prospectos">Prospectos con acción vencida ({{ pendientes.prospectos() }})</a> }
+            @if ((pendientes.pagos() ?? 0) > 0) { <a class="vb" [class.p]="(pendientes.prospectos() ?? 0) === 0" routerLink="/cobros">Pagos por confirmar ({{ pendientes.pagos() }})</a> }
+            @if ((pendientes.prospectos() ?? 0) === 0 && (pendientes.pagos() ?? 0) === 0) { <a class="vb p" routerLink="/metricas">Ver métricas</a> }
+          </div>
+        </app-vacio>
+      } @else {
+        <ul>
+          @for (i of esperando(); track i.tipo + ':' + (i.medioId ?? i.negocioId)) {
+            <li>
+              <a [routerLink]="['/revision/negocios', i.negocioId]">
+                <span class="tipo" [class]="tipo(i.tipo).clase">{{ tipo(i.tipo).texto }}</span>
+                <span class="quien">
+                  <b>{{ i.nombreComercial }}</b>
+                  <small>{{ i.regionNombre || i.municipioNombre || '—' }}</small>
+                </span>
+                <span class="tiempo" [class]="urgencia(i.urgencia).clase">{{ espera(i.horasEspera) }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+
+  <section class="tarjeta atajos" aria-labelledby="h-atajos">
+    <h2 id="h-atajos">Atajos</h2>
+    @for (a of atajos(); track a.ruta) {
+      <a class="atajo" [routerLink]="a.ruta">{{ a.texto }}</a>
+    }
+  </section>
+</div>

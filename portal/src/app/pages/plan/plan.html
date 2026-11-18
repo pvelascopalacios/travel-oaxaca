@@ -1,0 +1,145 @@
+@if (cargando() && !plan()) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else if (plan(); as p) {
+  <header class="cab">
+    <div class="fila-cab">
+      <h1>{{ ficha()?.nombreComercial ?? 'Plan y pagos' }}</h1>
+      @if (ficha(); as n) { <span class="estado" [class]="estadoNegocio(n.estado).clase">{{ estadoNegocio(n.estado).texto }}</span> }
+    </div>
+    <p class="suave">Plan y pagos</p>
+  </header>
+
+  <section class="tarjeta" aria-label="Tu plan">
+    <div class="fila-cab">
+      <h2>Plan {{ p.plan.nombre }}</h2>
+      @if (p.suscripcion; as s) { <span class="estado" [class]="estadoSus(s.estado).clase">{{ estadoSus(s.estado).texto }}</span> }
+    </div>
+
+    @if (p.gratuito || !p.suscripcion) {
+      <p class="suave">Estás en el plan gratuito. No tiene fecha de vencimiento.</p>
+    } @else if (p.suscripcion; as s) {
+      <p class="suave">
+        @if (s.periodo) { Plan {{ periodoTexto(s.periodo) }} · }
+        @if (s.monto !== null && s.monto !== undefined) { {{ dinero(s.monto) }} · }
+        Del {{ fecha(s.inicio) }} al {{ fecha(s.fin) }}
+      </p>
+      @if (p.enGracia) {
+        <p class="aviso ambar" role="status"><strong>Tu suscripción venció y estás en periodo de gracia.</strong> {{ dias(p.diasRestantes) }} para renovar antes de volver al plan gratuito.</p>
+      } @else if (s.estado === 'vencida') {
+        <p class="aviso ambar" role="status">Tu suscripción venció. Tu negocio volvió al plan gratuito.</p>
+      } @else if (s.estado === 'cancelada') {
+        <p class="aviso ambar" role="status">Esta suscripción se canceló{{ s.canceladaEn ? ' el ' + fecha(s.canceladaEn) : '' }}.@if (s.motivoCancelacion) { Motivo: {{ s.motivoCancelacion }} }</p>
+      } @else if (p.diasRestantes !== null && p.diasRestantes !== undefined && p.diasRestantes <= 15) {
+        <p class="aviso ambar" role="status">Tu plan vence pronto: {{ dias(p.diasRestantes) }}.</p>
+      }
+    }
+
+    <div class="usos">
+      <div class="uso">
+        <div class="fila-cab"><strong>Fotos</strong><span>{{ p.uso.fotos }} de {{ p.uso.limiteFotos }}</span></div>
+        <div class="barra" role="img" [attr.aria-label]="p.uso.fotos + ' de ' + p.uso.limiteFotos + ' fotos'"><i [class.lleno]="pct(p.uso.fotos, p.uso.limiteFotos) >= 100" [style.width.%]="pct(p.uso.fotos, p.uso.limiteFotos)"></i></div>
+      </div>
+      <div class="uso">
+        <div class="fila-cab"><strong>Opciones y ofertas</strong><span>{{ p.uso.ofertas }} de {{ p.uso.limiteOfertas }}</span></div>
+        <div class="barra" role="img" [attr.aria-label]="p.uso.ofertas + ' de ' + p.uso.limiteOfertas + ' opciones'"><i [class.lleno]="p.uso.limiteOfertas > 0 && pct(p.uso.ofertas, p.uso.limiteOfertas) >= 100" [style.width.%]="pct(p.uso.ofertas, p.uso.limiteOfertas)"></i></div>
+      </div>
+    </div>
+    <ul class="incluye">
+      <li [class.no]="!p.plan.veEstadisticas">Estadísticas y reporte mensual</li>
+      <li [class.no]="!p.plan.permitePromociones">Promociones</li>
+      @if (p.plan.permitePatrocinio !== undefined) { <li [class.no]="!p.plan.permitePatrocinio">Patrocinio en el Inicio</li> }
+    </ul>
+  </section>
+
+  <section class="tarjeta" aria-label="Planes disponibles">
+    <div class="fila-cab">
+      <h2>Planes disponibles</h2>
+      @if (hayPrecios()) {
+        <div class="segmento" role="group" aria-label="Periodo">
+          <button type="button" [attr.aria-pressed]="periodo() === 'mensual'" (click)="periodo.set('mensual')">Mensual</button>
+          <button type="button" [attr.aria-pressed]="periodo() === 'anual'" (click)="periodo.set('anual')">Anual</button>
+        </div>
+      }
+    </div>
+    @if (falloPlanes()) {
+      <p class="aviso" role="alert">No pudimos cargar la lista de planes. <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+    } @else if (planes(); as lista) {
+      <div class="planes">
+        @for (x of lista; track x.clave) {
+          <article class="plan" [class.actual]="x.clave === p.plan.clave">
+            <h3>{{ x.nombre }} @if (x.clave === p.plan.clave) { <span class="etiqueta">Tu plan</span> }</h3>
+            @if (precio(x); as pr) { <p class="precio">{{ pr }}<small> / {{ periodo() === 'anual' ? 'año' : 'mes' }}</small></p> }
+            <ul>
+              <li>{{ x.limiteFotos }} fotos</li>
+              <li [class.no]="x.limiteOfertas <= 0">{{ x.limiteOfertas > 0 ? x.limiteOfertas + ' opciones y ofertas' : 'Sin opciones ni ofertas' }}</li>
+              <li [class.no]="!x.veEstadisticas">Estadísticas y reporte mensual</li>
+              <li [class.no]="!x.permitePromociones">Promociones</li>
+              <li [class.no]="!x.permitePatrocinio">Patrocinio en el Inicio</li>
+            </ul>
+          </article>
+        }
+      </div>
+    } @else {
+      <p class="carga">Cargando planes…</p>
+    }
+
+    <div class="cambio">
+      <strong>¿Quieres cambiar de plan?</strong>
+      <p>El equipo de Travel Oaxaca activa el plan cuando recibe tu pago por transferencia o en efectivo. Tu plan cambia en cuanto lo registramos.</p>
+      @if (contacto; as c) {
+        @if (c.href) { <p><a class="boton" [href]="c.href" target="_blank" rel="noopener">{{ c.texto }}</a></p> } @else { <p><strong>{{ c.texto }}</strong></p> }
+      } @else {
+        <p class="suave chico">Escríbenos por el medio que ya usas con el equipo de Travel Oaxaca.</p>
+      }
+    </div>
+  </section>
+
+  <section class="tarjeta" aria-label="Historial de suscripciones">
+    <h2>Historial de suscripciones</h2>
+    @if (falloHistorial()) {
+      <p class="aviso" role="alert">No pudimos cargar el historial. <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+    } @else if (suscripciones(); as l) {
+      @if (l.length === 0) { <p class="vacio">Todavía no tienes suscripciones de pago.</p> } @else {
+        <div class="tabla"><table>
+          <thead><tr><th>Plan</th><th>Periodo</th><th>Vigencia</th><th>Estado</th></tr></thead>
+          <tbody>
+            @for (s of l; track $index) {
+              <tr>
+                <td>{{ s.planNombre || nombrePlan(s.planClave) }}</td>
+                <td>{{ periodoTexto(s.periodo) }}</td>
+                <td>{{ fecha(s.inicio) }} – {{ fecha(s.fin) }}</td>
+                <td><span class="estado" [class]="estadoSus(s.estado).clase">{{ estadoSus(s.estado).texto }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table></div>
+      }
+    } @else { <p class="carga">Cargando…</p> }
+  </section>
+
+  <section class="tarjeta" aria-label="Pagos">
+    <h2>Pagos</h2>
+    @if (falloPagos()) {
+      <p class="aviso" role="alert">No pudimos cargar tus pagos. <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+    } @else if (pagos(); as l) {
+      @if (l.length === 0) { <p class="vacio">Aún no hay pagos registrados.</p> } @else {
+        <div class="tabla"><table>
+          <thead><tr><th>Fecha</th><th>Concepto</th><th>Método</th><th class="num">Monto</th><th>Estado</th></tr></thead>
+          <tbody>
+            @for (g of l; track g.id) {
+              <tr>
+                <td>{{ fecha(g.pagadoEn || g.creadoEn) }}</td>
+                <td>{{ concepto(g.concepto) }}</td>
+                <td>{{ metodo(g.metodo) }}</td>
+                <td class="num">{{ dinero(g.monto, g.moneda) }}</td>
+                <td><span class="estado" [class]="estadoPago(g.estado).clase">{{ estadoPago(g.estado).texto }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table></div>
+      }
+    } @else { <p class="carga">Cargando…</p> }
+  </section>
+}

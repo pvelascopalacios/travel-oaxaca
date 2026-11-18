@@ -1,0 +1,152 @@
+<a class="volver" routerLink="/inicio" [queryParams]="{ tipo: form.tipo }">← Volver a Inicio</a>
+
+@if (cargando()) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }}</p>
+} @else {
+  <header class="cab fila-cab">
+    <h1>{{ nuevo() ? 'Nuevo bloque' : 'Editar bloque' }}</h1>
+    <span class="tag">{{ tipoTexto(form.tipo) }}</span>
+    @if (!nuevo()) { <span class="st" [class]="estadoInfo(form.estado).clase">{{ estadoInfo(form.estado).texto }}</span> }
+  </header>
+
+  <form class="tarjeta" (ngSubmit)="guardar()" novalidate>
+    @if (nuevo()) {
+      <div class="tipos" role="radiogroup" aria-label="Tipo de bloque">
+        @for (t of tipos; track t.clave) {
+          <button type="button" role="radio" class="t" [class.on]="form.tipo === t.clave" [attr.aria-checked]="form.tipo === t.clave" (click)="elegirTipo(t.clave)"><b>{{ t.texto }}</b><span class="chico suave">{{ t.ayuda }}</span></button>
+        }
+      </div>
+    } @else {
+      <p class="chico suave">El tipo no se puede cambiar. Si necesitas otro, crea un bloque nuevo.</p>
+    }
+
+    <p class="sub">Textos por idioma</p>
+    <app-idiomas-pestanas [idiomas]="cat.idiomasOrdenados()" [activo]="idioma()" [conTexto]="conTexto()" [errores]="idiomasConError()" (cambio)="idioma.set($event)" />
+    @if (errores()['texto-' + idioma()]; as m) { <p class="aviso" role="alert">{{ m }}</p> }
+    <div class="rejilla">
+      <label>{{ etiquetas().etiqueta }} <span class="ayuda">(hasta 60)</span>
+        <input name="etiqueta" maxlength="70" [(ngModel)]="textoActual().etiqueta" (ngModelChange)="cambio()" />
+      </label>
+      <label [class.error]="errores()['titulo'] && idioma() === 'es' || errores()['titulo-' + idioma()]">{{ etiquetas().titulo }}{{ idioma() === 'es' ? ' *' : '' }} <span class="ayuda">(hasta 160)</span>
+        <input name="titulo" maxlength="170" [(ngModel)]="textoActual().titulo" (ngModelChange)="cambio()" />
+        @if (idioma() === 'es' && errores()['titulo']; as m) { <span class="msg">{{ m }}</span> }
+        @if (errores()['titulo-' + idioma()]; as m) { <span class="msg">{{ m }}</span> }
+      </label>
+    </div>
+    <label>{{ etiquetas().texto }} <span class="ayuda">(hasta 400)</span>
+      <textarea name="texto" rows="3" maxlength="450" [(ngModel)]="textoActual().texto" (ngModelChange)="cambio()"></textarea>
+    </label>
+    @if (etiquetas().boton; as b) {
+      <label [class.error]="errores()['boton'] && idioma() === 'es'">{{ b }} <span class="ayuda">(hasta 40)</span>
+        <input name="boton" maxlength="50" [(ngModel)]="textoActual().boton" (ngModelChange)="cambio()" />
+        @if (idioma() === 'es' && errores()['boton']; as m) { <span class="msg">{{ m }}</span> }
+      </label>
+    }
+
+    @switch (form.tipo) {
+      @case ('destacado') {
+        <label [class.error]="errores()['ruta']">Página a la que lleva <span class="ayuda">(empieza con /, sin dominio; ej. /lugar/monte-alban)</span>
+          <input name="ruta" maxlength="210" [(ngModel)]="form.ruta" (ngModelChange)="cambio()" />
+          @if (errores()['ruta']; as m) { <span class="msg">{{ m }}</span> }
+        </label>
+      }
+      @case ('reel') {
+        <label [class.error]="errores()['enlace']">Enlace del Reel en Facebook
+          <input name="enlace" inputmode="url" maxlength="310" placeholder="https://www.facebook.com/…" [(ngModel)]="form.enlace" (ngModelChange)="cambio()" />
+          @if (errores()['enlace']; as m) { <span class="msg">{{ m }}</span> }
+        </label>
+      }
+      @case ('pueblo') {
+        <div class="rejilla">
+          <label [class.error]="errores()['comunidades']">Comunidades <span class="ayuda">(opcional)</span>
+            <input name="comunidades" inputmode="numeric" [(ngModel)]="form.comunidades" />
+            @if (errores()['comunidades']; as m) { <span class="msg">{{ m }}</span> }
+          </label>
+        </div>
+        <p class="sub">Saludo en lengua indígena (opcional)</p>
+        <div class="rejilla">
+          <label [class.error]="errores()['saludo']">Saludo <span class="ayuda">(hasta 120)</span>
+            <input name="saludo" maxlength="130" [(ngModel)]="form.saludo" />
+            @if (errores()['saludo']; as m) { <span class="msg">{{ m }}</span> }
+          </label>
+          <label [class.error]="errores()['saludoIdioma']">Lengua
+            <select name="saludoIdioma" [(ngModel)]="form.saludoIdioma">
+              <option value="">Elige la lengua</option>
+              @for (i of indigenas(); track i.codigo) { <option [value]="i.codigo">{{ i.nombre }}</option> }
+            </select>
+            @if (errores()['saludoIdioma']; as m) { <span class="msg">{{ m }}</span> }
+          </label>
+          <label [class.error]="errores()['saludoVerificadoPor']">Quién lo verificó <span class="ayuda">(persona u organización)</span>
+            <input name="verificadoPor" maxlength="210" [(ngModel)]="form.saludoVerificadoPor" />
+            @if (errores()['saludoVerificadoPor']; as m) { <span class="msg">{{ m }}</span> }
+          </label>
+        </div>
+      }
+      @case ('historia') {
+        <div class="rejilla">
+          <label [class.error]="errores()['persona']">Persona de la historia
+            <input name="persona" maxlength="130" [(ngModel)]="form.persona" (ngModelChange)="cambio()" />
+            @if (errores()['persona']; as m) { <span class="msg">{{ m }}</span> }
+          </label>
+          <label [class.error]="errores()['lugar']">Lugar <span class="ayuda">(opcional)</span>
+            <input name="lugar" maxlength="130" [(ngModel)]="form.lugar" />
+            @if (errores()['lugar']; as m) { <span class="msg">{{ m }}</span> }
+          </label>
+        </div>
+        <app-selector-negocio titulo="Negocio de la historia (opcional)" [elegido]="form.negocioId ? { id: form.negocioId, nombre: form.negocioNombre || 'Negocio elegido' } : null" (cambio)="elegirNegocio($event)" />
+        <label class="casilla" [class.error]="errores()['permisoConfirmado']"><input type="checkbox" name="permiso" [(ngModel)]="form.permisoConfirmado" (ngModelChange)="cambio()" /> Confirmo que la persona dio su permiso para publicar su historia</label>
+      }
+    }
+
+    <p class="sub">Foto</p>
+    <div class="foto-fila">
+      @if (form.fotoUrl; as u) { <img class="foto-prev" [src]="u" alt="Foto del bloque" /> }
+      @else if (form.medioId) { <div class="foto-vacia">Foto elegida<br />(se verá al guardar)</div> }
+      @else { <div class="foto-vacia" [class.error]="errores()['medioId']">Sin foto</div> }
+      <div class="foto-datos">
+        <app-subir-foto [texto]="form.medioId ? 'Cambiar foto' : 'Subir foto'" (lista)="fotoLista($event)" />
+        <label [class.error]="errores()['credito']">Crédito <span class="ayuda">(hasta 120)</span>
+          <input name="credito" maxlength="130" placeholder="Foto: nombre de quien la tomó" [(ngModel)]="form.credito" />
+          @if (errores()['credito']; as m) { <span class="msg">{{ m }}</span> }
+        </label>
+        @if (errores()['medioId']; as m) { <p class="msg">{{ m }}</p> }
+        <p class="chico suave">La foto que sube el equipo se aprueba sola. Sin foto, el bloque no se muestra en el sitio.</p>
+      </div>
+    </div>
+
+    <div class="rejilla">
+      <label>Publicar desde <input type="date" name="desde" [(ngModel)]="form.publicarDesde" /></label>
+      <label [class.error]="errores()['publicarHasta']">Publicar hasta <input type="date" name="hasta" [(ngModel)]="form.publicarHasta" />@if (errores()['publicarHasta']; as m) { <span class="msg">{{ m }}</span> }</label>
+      <label [class.error]="errores()['orden']">Orden <span class="ayuda">(0 a 999)</span> <input name="orden" inputmode="numeric" [(ngModel)]="form.orden" />@if (errores()['orden']; as m) { <span class="msg">{{ m }}</span> }</label>
+      <label>Estado
+        <select name="estado" [(ngModel)]="form.estado" (ngModelChange)="cambio()">
+          <option value="borrador">Borrador</option>
+          <option value="publicado">Publicado</option>
+          <option value="archivado">Archivado</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="nota">
+      <b>Para publicar:</b>
+      <ul class="falta">@for (x of faltas(); track x.campo) { <li [class.no]="!x.ok">{{ x.texto }}</li> }</ul>
+    </div>
+
+    @if (aviso(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+    @if (errorApi(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+    <div class="barra-guardar">
+      <button type="submit" class="mini-b ok" [disabled]="trabajando()">{{ trabajando() ? 'Guardando…' : 'Guardar bloque' }}</button>
+      <a class="mini-b enlace-b" routerLink="/inicio" [queryParams]="{ tipo: form.tipo }">Cancelar</a>
+      @if (!nuevo()) {
+        @if (!archivando()) { <button type="button" class="mini-b mal" (click)="archivando.set(true)">Archivar</button> }
+        @else {
+          <span class="chico">¿Archivar este bloque? Deja de mostrarse.</span>
+          <button type="button" class="mini-b mal" [disabled]="trabajando()" (click)="archivar()">Sí, archivar</button>
+          <button type="button" class="mini-b" (click)="archivando.set(false)">No</button>
+        }
+      }
+    </div>
+  </form>
+}

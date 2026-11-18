@@ -1,0 +1,139 @@
+:host {
+  display: block;
+}
+
+.destacado {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 26px;
+  padding: 22px 22px 58px;
+  border-radius: 24px;
+  background: var(--cantera);
+  min-height: 420px;
+}
+
+.foto {
+  position: relative;
+  display: block;
+  min-height: 340px;
+  border-radius: 200px 18px 18px 18px;
+  overflow: hidden;
+  background: var(--linea);
+
+  img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.credito {
+  position: absolute;
+  left: 18px;
+  bottom: 16px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--papel);
+  font-size: 0.78rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 20%);
+}
+
+.texto {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 14px 8px 4px;
+  min-width: 0;
+
+  h2 {
+    font-size: clamp(1.8rem, 1.2rem + 2vw, 2.9rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+  }
+}
+
+.etiqueta {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--grana);
+}
+
+.parrafo {
+  max-width: 42ch;
+  color: var(--tinta-suave);
+  font-size: 1.02rem;
+}
+
+.controles {
+  position: absolute;
+  right: 22px;
+  bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.punto {
+  position: relative;
+  width: 28px;
+  height: 32px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    transform: translate(-50%, -50%);
+    background: #b4bcae;
+    transition: width 0.2s;
+  }
+
+  &.activo::after {
+    width: 24px;
+    background: var(--noche);
+  }
+}
+
+.pausa {
+  width: 32px;
+  height: 32px;
+  margin-right: 6px;
+  border-radius: 50%;
+  border: 1.5px solid var(--noche);
+  background: transparent;
+  color: var(--noche);
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+@media (max-width: 820px) {
+  .destacado {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 14px 14px 56px;
+  }
+  .foto {
+    min-height: 240px;
+    border-radius: 120px 16px 16px 16px;
+  }
+  .controles {
+    inset-inline: 0;
+    justify-content: center;
+    right: auto;
+  }
+}

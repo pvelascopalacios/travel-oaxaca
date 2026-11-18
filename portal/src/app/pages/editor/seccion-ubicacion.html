@@ -1,0 +1,157 @@
+<fieldset class="bloque" [disabled]="soloLectura()">
+  <div class="tarjeta">
+    <div class="fila-cab">
+      <h2>Sucursales</h2>
+      <button type="button" class="boton secundario" (click)="elegir(NUEVA)">+ Agregar sucursal</button>
+    </div>
+    <div class="chips" role="group" aria-label="Sucursales">
+      @for (s of sucursales(); track s.id) {
+        <button type="button" class="chip" [attr.aria-pressed]="seleccion() === s.id" (click)="elegir(s.id)">
+          {{ s.nombre || s.municipioNombre || 'Sucursal' }}@if (s.esPrincipal) { · principal }
+        </button>
+      }
+      @if (esNueva()) { <button type="button" class="chip" aria-pressed="true">Nueva sucursal</button> }
+    </div>
+
+    <form (ngSubmit)="guardarSucursal()" novalidate class="forma">
+      <div class="campos">
+        <label class="ancho" [class.error]="envioSucursal.campo('nombre')">Nombre de la sucursal <span class="ayuda">(opcional; útil si tienes más de una)</span>
+          <input type="text" name="nombre" maxlength="120" [(ngModel)]="f().nombre" />
+        </label>
+        <label [class.error]="envioSucursal.campo('municipioId')">Municipio
+          <input type="search" name="filtro" placeholder="Escribe para buscar" autocomplete="off" [ngModel]="filtro()" (ngModelChange)="filtro.set($event)" />
+          <select name="municipio" [attr.size]="filtro().trim() ? 4 : null" [ngModel]="f().municipioId" (ngModelChange)="cambiarMunicipio($event)">
+            <option value="" disabled>Elige el municipio</option>
+            @for (m of visibles(); track m.id) { <option [value]="m.id">{{ m.nombre }}</option> }
+          </select>
+          @if (envioSucursal.campo('municipioId'); as m) { <span class="msg">{{ m }}</span> }
+        </label>
+        <label>Localidad <span class="ayuda">(opcional)</span>
+          <select name="localidad" [(ngModel)]="f().localidadId" [disabled]="!localidades().length">
+            <option value="">{{ localidades().length ? 'Sin indicar' : 'Este municipio no tiene localidades' }}</option>
+            @for (l of localidades(); track l.id) { <option [value]="l.id">{{ l.nombre }}</option> }
+          </select>
+        </label>
+        <label [class.error]="envioSucursal.campo('direccionTexto')">Dirección
+          <input type="text" name="direccion" maxlength="300" [(ngModel)]="f().direccionTexto" />
+          @if (envioSucursal.campo('direccionTexto'); as m) { <span class="msg">{{ m }}</span> }
+        </label>
+        <label [class.error]="envioSucursal.campo('referencia')">Referencia
+          <input type="text" name="referencia" maxlength="300" placeholder="Frente al templo, portón verde…" [(ngModel)]="f().referencia" />
+          @if (envioSucursal.campo('referencia'); as m) { <span class="msg">{{ m }}</span> }
+        </label>
+      </div>
+
+      <div>
+        <strong>Marca tu negocio en el mapa</strong>
+        <p class="suave chico">Toca el mapa o arrastra el pin. También puedes escribir las coordenadas.</p>
+      </div>
+      <app-selector-mapa [latitud]="lat()" [longitud]="lng()" [centroLat]="municipioElegido()?.latitud ?? null" [centroLng]="municipioElegido()?.longitud ?? null" [deshabilitado]="soloLectura()" (elegido)="alMarcar($event)" />
+      <div class="campos">
+        <label [class.error]="envioSucursal.campo('latitud')">Latitud
+          <input type="text" inputmode="decimal" name="lat" [(ngModel)]="f().latitud" />
+        </label>
+        <label [class.error]="envioSucursal.campo('longitud') || envioSucursal.campo('latitud')">Longitud
+          <input type="text" inputmode="decimal" name="lng" [(ngModel)]="f().longitud" />
+        </label>
+      </div>
+      @if (envioSucursal.campo('latitud') ?? envioSucursal.campo('longitud'); as m) { <p class="msg">{{ m }}</p> }
+
+      @if (publicada() && actual()?.esPrincipal) {
+        <p class="aviso ambar">Tu ficha ya está publicada: cambiar la ubicación de la sucursal principal espera la revisión del equipo.</p>
+      }
+
+      <div class="acciones">
+        <button type="submit" class="boton" [disabled]="envioSucursal.trabajando() || soloLectura()">{{ envioSucursal.trabajando() ? 'Guardando…' : (esNueva() ? 'Crear sucursal' : 'Guardar sucursal') }}</button>
+        @if (!esNueva() && actual() && !actual()!.esPrincipal) {
+          <button type="button" class="boton secundario" [disabled]="soloLectura()" (click)="confirmandoBorrar.set(true)">Eliminar sucursal</button>
+        }
+      </div>
+      @if (confirmandoBorrar()) {
+        <div class="confirma" role="alertdialog">
+          <p><strong>¿Eliminar esta sucursal?</strong> Se borran también sus horarios y fechas especiales.</p>
+          <div class="acciones">
+            <button type="button" class="boton" (click)="eliminar()">Sí, eliminar</button>
+            <button type="button" class="boton secundario" (click)="confirmandoBorrar.set(false)">Cancelar</button>
+          </div>
+        </div>
+      }
+      <app-estado-guardado [envio]="envioSucursal" />
+    </form>
+  </div>
+
+  @if (!esNueva() && actual()) {
+    <div class="tarjeta">
+      <h2>Horarios</h2>
+      <p class="suave chico">Puedes poner hasta {{ maxFranjas }} horarios por día (por ejemplo, de mañana y de tarde). Un día sin nada no se muestra. Sin horarios, la ficha no dice «abierto ahora».</p>
+      <div class="horarios">
+        @for (d of dias(); track trackDia($index, d)) {
+          <div class="dia">
+            <strong>{{ nombreDia(d.dia) }}</strong>
+            <div class="franjas">
+              @if (d.cerrado) {
+                <span class="etiqueta">Cerrado</span>
+              } @else {
+                @for (fr of d.franjas; track $index) {
+                  <span class="franja">
+                    <input type="time" [attr.aria-label]="nombreDia(d.dia) + ' abre'" [(ngModel)]="fr.abre" [name]="'a' + d.dia + $index" />
+                    a
+                    <input type="time" [attr.aria-label]="nombreDia(d.dia) + ' cierra'" [(ngModel)]="fr.cierra" [name]="'c' + d.dia + $index" />
+                    <button type="button" class="enlace" [attr.aria-label]="'Quitar horario del ' + nombreDia(d.dia)" (click)="quitarFranja(d, $index)">Quitar</button>
+                  </span>
+                } @empty {
+                  <span class="suave chico">Sin horario</span>
+                }
+              }
+            </div>
+            <div class="dia-acciones">
+              @if (d.cerrado) {
+                <button type="button" class="enlace" (click)="abrirDia(d)">Abrir</button>
+              } @else {
+                @if (d.franjas.length < maxFranjas) { <button type="button" class="enlace" (click)="agregarFranja(d)">+ horario</button> }
+                <button type="button" class="enlace" (click)="alternarCerrado(d)">Cerrado</button>
+                @if (d.franjas.length) { <button type="button" class="enlace" (click)="copiar(d)">Copiar a todos</button> }
+              }
+            </div>
+          </div>
+        }
+      </div>
+      <div class="acciones">
+        <button type="button" class="boton" [disabled]="envioHorarios.trabajando() || soloLectura()" (click)="guardarHorarios()">{{ envioHorarios.trabajando() ? 'Guardando…' : 'Guardar horarios' }}</button>
+      </div>
+      <app-estado-guardado [envio]="envioHorarios" />
+    </div>
+
+    <div class="tarjeta">
+      <h2>Fechas especiales</h2>
+      <p class="suave chico">Días que no siguen tu horario normal: feriados, fiestas, vacaciones. Solo fechas de hoy en adelante.</p>
+      @for (e of fechas(); track $index) {
+        <div class="fecha">
+          <label>Fecha
+            <input type="date" [name]="'f' + $index" [min]="hoy" [ngModel]="e.fecha" (ngModelChange)="cambiarFecha($index, { fecha: $event })" />
+          </label>
+          <label>Ese día
+            <select [name]="'e' + $index" [ngModel]="e.cerrado ? 'cerrado' : 'abierto'" (ngModelChange)="cambiarFecha($index, { cerrado: $event === 'cerrado' })">
+              <option value="cerrado">Cerrado</option><option value="abierto">Abierto con otro horario</option>
+            </select>
+          </label>
+          @if (!e.cerrado) {
+            <label>Abre<input type="time" [name]="'fa' + $index" [ngModel]="e.abre" (ngModelChange)="cambiarFecha($index, { abre: $event })" /></label>
+            <label>Cierra<input type="time" [name]="'fc' + $index" [ngModel]="e.cierra" (ngModelChange)="cambiarFecha($index, { cierra: $event })" /></label>
+          }
+          <label class="nota">Nota <span class="ayuda">(opcional)</span>
+            <input type="text" [name]="'fn' + $index" maxlength="200" [ngModel]="e.nota" (ngModelChange)="cambiarFecha($index, { nota: $event })" />
+          </label>
+          <button type="button" class="enlace" (click)="quitarFecha($index)">Quitar</button>
+        </div>
+      }
+      <div class="acciones">
+        <button type="button" class="boton secundario" [disabled]="soloLectura()" (click)="agregarFecha()">+ Agregar fecha</button>
+        <button type="button" class="boton" [disabled]="envioFechas.trabajando() || soloLectura()" (click)="guardarFechas()">{{ envioFechas.trabajando() ? 'Guardando…' : 'Guardar fechas' }}</button>
+      </div>
+      <app-estado-guardado [envio]="envioFechas" />
+    </div>
+  } @else if (esNueva()) {
+    <p class="suave chico">Cuando crees la sucursal podrás ponerle sus horarios y fechas especiales.</p>
+  }
+</fieldset>

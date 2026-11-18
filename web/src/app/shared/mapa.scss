@@ -1,0 +1,70 @@
+@import 'leaflet/dist/leaflet.css';
+
+.mapa-caja {
+  position: relative;
+  height: 100%;
+  min-height: 320px;
+  border-radius: var(--radio);
+  overflow: hidden;
+  background: #e5ece3;
+  box-shadow: var(--sombra);
+  isolation: isolate;
+}
+
+.mapa-lienzo {
+  position: absolute;
+  inset: 0;
+  font-family: var(--fuente);
+}
+
+.mapa-zona {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 800;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--noche);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: var(--sombra-fuerte);
+  cursor: pointer;
+}
+
+.pin-caja {
+  background: none;
+  border: 0;
+}
+
+.pin {
+  display: inline-block;
+  transform: translate(-50%, -50%);
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--noche);
+  font: 700 0.85rem/1.2 var(--fuente);
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgb(29 36 51 / 28%);
+  cursor: pointer;
+
+  &.elegido {
+    background: var(--grana);
+    color: #fff;
+  }
+
+  &.punto {
+    width: 14px;
+    height: 14px;
+    padding: 0;
+    background: var(--laguna);
+    border: 2px solid #fff;
+  }
+
+  &.punto.elegido {
+    background: var(--grana);
+  }
+}

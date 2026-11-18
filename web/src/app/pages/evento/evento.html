@@ -1,0 +1,83 @@
+@if (noExiste()) {
+  <app-no-existe />
+} @else if (fallo()) {
+  <div class="contenedor pagina"><p class="aviso-error">{{ i18n.t('errorCarga') }}</p></div>
+} @else if (e(); as e) {
+  <article class="contenedor pagina">
+    <nav class="migas" [attr.aria-label]="i18n.t('inicio')">
+      <a [routerLink]="['/', i18n.lang()]">{{ i18n.t('inicio') }}</a>
+      <span aria-hidden="true">›</span>
+      <a [routerLink]="['/', i18n.lang(), 'eventos']">{{ i18n.t('tituloEventos') }}</a>
+      <span aria-hidden="true">›</span>
+      <span>{{ e.nombre }}</span>
+    </nav>
+
+    @if (e.fotos?.length) {
+      <app-galeria [fotos]="e.fotos!" [nombre]="e.nombre" />
+    }
+
+    <header class="cabecera cab-evento">
+      <div class="fecha-bloque" aria-hidden="true"><b>{{ bloqueFecha().dias }}</b><span>{{ bloqueFecha().mes }}</span></div>
+      <div class="cab-texto">
+        @if (e.temporadaNombre) {
+          <p class="eyebrow">{{ e.temporadaNombre }}</p>
+        }
+        <h1>{{ e.nombre }}</h1>
+        @if (e.municipioNombre) {
+          <p class="ubicacion"><span class="pastilla">{{ e.municipioNombre }}</span>@if (e.regionNombre) { <span class="pastilla">{{ e.regionNombre }}</span> }</p>
+        }
+      </div>
+    </header>
+
+    <div class="cuerpo cuerpo-evento">
+      <div class="principal">
+        @if (descripcion().length) {
+          <section class="bloque">
+            <h2>{{ i18n.t('sobreEvento') }}</h2>
+            @for (p of descripcion(); track $index) {
+              <p>{{ p }}</p>
+            }
+          </section>
+        }
+        @if (e.negocios.length) {
+          <section class="bloque">
+            <h2>{{ i18n.t('negociosEvento') }}</h2>
+            <div class="rejilla">
+              @for (n of e.negocios; track n.id) {
+                <app-tarjeta-negocio [negocio]="n" />
+              }
+            </div>
+          </section>
+        }
+        <app-comentarios class="bloque-com" seccion="eventos" [slug]="e.slug" [objetoId]="e.id" />
+      </div>
+
+      <aside class="lateral lateral-evento" [attr.aria-label]="i18n.t('datosPracticos')">
+        <dl class="ficha-datos">
+          <div>
+            <dt>{{ i18n.t('cuando') }}</dt>
+            <dd>{{ fechas() }}@if (horas()) { <span class="suave"> · {{ horas() }}</span> }</dd>
+          </div>
+          @if (sede() || e.municipioNombre) {
+            <div>
+              <dt>{{ i18n.t('donde') }}</dt>
+              <dd>@if (sede(); as s) { {{ s }}<br> }<span class="suave">{{ e.municipioNombre }}@if (e.regionNombre) {, {{ e.regionNombre }} }</span></dd>
+            </div>
+          }
+          @if (costo(); as c) {
+            <div><dt>{{ i18n.t('costo') }}</dt><dd>{{ c }}</dd></div>
+          }
+        </dl>
+        @if (calendario(); as c) {
+          <a class="boton" [href]="c" target="_blank" rel="noopener noreferrer">{{ i18n.t('agregarCalendario') }}</a>
+        }
+        @if (llegar(); as u) {
+          <a class="boton secundario" [href]="u" target="_blank" rel="noopener noreferrer">{{ i18n.t('comoLlegar') }}</a>
+        }
+      </aside>
+      @if (pines().length) {
+        <div class="mapa mapa-evento"><app-mapa [pines]="pines()" [conZona]="false" /></div>
+      }
+    </div>
+  </article>
+}

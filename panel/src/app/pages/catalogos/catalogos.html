@@ -1,0 +1,163 @@
+<header class="cab">
+  <h1>Catálogos</h1>
+  <p class="suave chico">Categorías, servicios, municipios y localidades que usan las fichas y los filtros.</p>
+</header>
+
+<nav class="tabs" aria-label="Catálogos">
+  @for (p of pestanas(); track p.c) {
+    <a href="javascript:void(0)" (click)="irA(p.c)" [class.on]="actual() === p.c" role="tab">{{ p.t }}</a>
+  }
+</nav>
+
+@if (aviso(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+@if (fallo(); as f) { <p class="aviso" role="alert">{{ f.general }}</p> }
+<p class="nota">La API solo permite <b>crear y cambiar</b>, y el listado muestra únicamente lo que está activo: lo que desactives deja de verse aquí y no se puede reactivar desde el panel. Al editar un nombre solo se cambian los idiomas que escribas; los demás se quedan como estaban.</p>
+
+@if (editando(); as ed) {
+  <form class="tarjeta" (ngSubmit)="guardar()" novalidate [attr.aria-label]="ed === 'nuevo' ? 'Nuevo' : 'Editar'">
+    <h2>{{ ed === 'nuevo' ? (actual() === 'categorias' || actual() === 'localidades' ? 'Nueva' : 'Nuevo') : 'Editar' }} {{ actual() === 'categorias' ? 'categoría' : actual() === 'servicios' ? 'servicio' : actual() === 'municipios' ? 'municipio' : 'localidad' }}</h2>
+
+    @if (actual() === 'categorias' || actual() === 'servicios') {
+      <div class="rejilla">
+        @if (ed === 'nuevo') {
+          <label [class.error]="errores()['clave']">Clave * <span class="ayuda">(minúsculas, números y _)</span>
+            <input name="clave" autocomplete="off" [(ngModel)]="formNom.clave" />@if (errores()['clave']; as m) { <span class="msg">{{ m }}</span> }
+          </label>
+        } @else {
+          <label>Clave <input name="clave" [ngModel]="formNom.clave" disabled /></label>
+        }
+        @if (actual() === 'categorias') {
+          @if (ed === 'nuevo') {
+            <label>Es subcategoría de
+              <select name="padre" [(ngModel)]="formNom.padreId"><option value="">— Ninguna (categoría principal)</option>@for (f of filasCategorias(); track f.c.id) { @if (f.nivel === 0) { <option [value]="f.c.id">{{ f.c.nombre }}</option> } }</select>
+            </label>
+          }
+          <label [class.error]="errores()['orden']">Orden <input name="orden" inputmode="numeric" [(ngModel)]="formNom.orden" />@if (errores()['orden']; as m) { <span class="msg">{{ m }}</span> }</label>
+        } @else {
+          <label [class.error]="errores()['grupo']">Grupo *
+            <select name="grupo" [(ngModel)]="formNom.grupo">@for (g of grupos; track g.clave) { <option [value]="g.clave">{{ g.texto }}</option> }</select>
+          </label>
+        }
+        <label [class.error]="errores()['icono']">Icono <input name="icono" maxlength="70" placeholder="Ej. bed" [(ngModel)]="formNom.icono" />@if (errores()['icono']; as m) { <span class="msg">{{ m }}</span> }</label>
+      </div>
+      <p class="sub">Nombre por idioma</p>
+      <div class="rejilla">
+        @for (i of cat.idiomasOrdenados(); track i.codigo) {
+          <label [class.error]="errores()['nombre-' + i.codigo]">{{ i.nombre }}{{ i.codigo === 'es' ? ' *' : '' }}
+            <input [name]="'nombre-' + i.codigo" [attr.name]="'nombre-' + i.codigo" maxlength="110" [ngModel]="formNom.nombres[i.codigo] ?? ''" (ngModelChange)="formNom.nombres[i.codigo] = $event" />
+            @if (errores()['nombre-' + i.codigo]; as m) { <span class="msg">{{ m }}</span> }
+          </label>
+        }
+      </div>
+      <label class="casilla"><input type="checkbox" name="activo" [(ngModel)]="formNom.activo" /> Activo (si lo desmarcas, dejará de verse y no podrás reactivarlo aquí)</label>
+    } @else {
+      @if (actual() === 'municipios') {
+        <div class="rejilla">
+          <label [class.error]="errores()['regionId']">Región *
+            <select name="regionId" [(ngModel)]="formGeo.regionId"><option value="">Elige la región</option>@for (r of cat.regiones(); track r.id) { <option [value]="r.id">{{ r.nombre }}</option> }</select>
+            @if (errores()['regionId']; as m) { <span class="msg">{{ m }}</span> }
+          </label>
+          <label [class.error]="errores()['claveInegi']">Clave INEGI <span class="ayuda">(5 dígitos, opcional)</span><input name="inegi" inputmode="numeric" maxlength="6" [(ngModel)]="formGeo.claveInegi" />@if (errores()['claveInegi']; as m) { <span class="msg">{{ m }}</span> }</label>
+        </div>
+      }
+      <div class="rejilla">
+        <label [class.error]="errores()['nombre']">Nombre * <span class="ayuda">(hasta 120)</span><input name="nombre" maxlength="130" [(ngModel)]="formGeo.nombre" />@if (errores()['nombre']; as m) { <span class="msg">{{ m }}</span> }</label>
+        <label [class.error]="errores()['latitud']">Latitud <input name="lat" inputmode="decimal" [(ngModel)]="formGeo.latitud" /></label>
+        <label [class.error]="errores()['latitud']">Longitud <input name="lng" inputmode="decimal" [(ngModel)]="formGeo.longitud" /></label>
+      </div>
+      @if (errores()['latitud']; as m) { <p class="msg">{{ m }}</p> }
+      @if (errores()['municipio']; as m) { <p class="msg">{{ m }}</p> }
+      <label class="casilla"><input type="checkbox" name="activo" [(ngModel)]="formGeo.activo" /> Activo (si lo desmarcas, dejará de verse y no podrás reactivarlo aquí)</label>
+    }
+
+    @if (errorApi(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+    <div class="barra-guardar">
+      <button type="submit" class="mini-b ok" [disabled]="trabajando()">{{ trabajando() ? 'Guardando…' : 'Guardar' }}</button>
+      <button type="button" class="mini-b" [disabled]="trabajando()" (click)="cancelar()">Cancelar</button>
+    </div>
+  </form>
+}
+
+@switch (actual()) {
+  @case ('categorias') {
+    <div class="fila-cab"><h2>Categorías</h2><button type="button" class="mini-b ok" (click)="nuevo()">+ Nueva categoría</button></div>
+    @if (categorias() === null) { <p class="carga">Cargando…</p> }
+    @else {
+      <div class="tarjeta tabla">
+        <table>
+          <thead><tr><th>Categoría</th><th>Clave</th><th>Icono</th><th class="num">Orden</th><th></th></tr></thead>
+          <tbody>
+            @for (f of filasCategorias(); track f.c.id) {
+              <tr>
+                <td [style.padding-left.rem]="0.6 + f.nivel * 1.4">{{ f.nivel ? '↳ ' : '' }}<b>{{ f.c.nombre }}</b></td>
+                <td>{{ f.c.clave }}</td><td>{{ f.c.icono || '—' }}</td><td class="num">{{ f.c.orden }}</td>
+                <td><button type="button" class="mini" (click)="editarCategoria(f.c)">Editar</button></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+  @case ('servicios') {
+    <div class="fila-cab"><h2>Servicios</h2><button type="button" class="mini-b ok" (click)="nuevo()">+ Nuevo servicio</button></div>
+    @if (servicios() === null) { <p class="carga">Cargando…</p> }
+    @else {
+      <div class="tarjeta tabla">
+        <table>
+          <thead><tr><th>Servicio</th><th>Clave</th><th>Grupo</th><th>Icono</th><th></th></tr></thead>
+          <tbody>
+            @for (s of servicios(); track s.id) {
+              <tr><td><b>{{ s.nombre }}</b></td><td>{{ s.clave }}</td><td>{{ grupoTexto(s.grupo) }}</td><td>{{ s.icono || '—' }}</td><td><button type="button" class="mini" (click)="editarServicio(s)">Editar</button></td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+  @case ('municipios') {
+    <div class="fila-cab">
+      <h2>Municipios</h2>
+      <button type="button" class="mini-b ok" (click)="nuevo()">+ Nuevo municipio</button>
+    </div>
+    <label class="filtro">Región
+      <select name="region" [ngModel]="regionActual()" (ngModelChange)="elegirRegion($event)">@for (r of cat.regiones(); track r.id) { <option [value]="r.id">{{ r.nombre }}</option> }</select>
+    </label>
+    @if (!cat.cargado()) { <p class="carga">Cargando…</p> }
+    @else if (municipiosDeRegion().length === 0) { <p class="vacio">No hay municipios en esta región.</p> }
+    @else {
+      <div class="tarjeta tabla">
+        <table>
+          <thead><tr><th>Municipio</th><th>INEGI</th><th class="num">Latitud</th><th class="num">Longitud</th><th></th></tr></thead>
+          <tbody>
+            @for (m of municipiosDeRegion(); track m.id) {
+              <tr><td><b>{{ m.nombre }}</b></td><td>{{ m.claveInegi || '—' }}</td><td class="num">{{ m.latitud ?? '—' }}</td><td class="num">{{ m.longitud ?? '—' }}</td><td><button type="button" class="mini" (click)="editarMunicipio(m)">Editar</button></td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+  @case ('localidades') {
+    <div class="fila-cab">
+      <h2>Localidades</h2>
+      @if (municipio()) { <button type="button" class="mini-b ok" (click)="nuevo()">+ Nueva localidad</button> }
+    </div>
+    <app-selector-municipio titulo="Municipio" [valor]="municipioLoc()" (cambio)="elegirMunicipioLoc($event)" />
+    @if (!municipio()) { <p class="vacio">Elige un municipio para ver y editar sus localidades.</p> }
+    @else if (localidades() === null) { <p class="carga">Cargando…</p> }
+    @else if (localidades()!.length === 0) { <p class="vacio">Este municipio aún no tiene localidades.</p> }
+    @else {
+      <div class="tarjeta tabla">
+        <table>
+          <thead><tr><th>Localidad</th><th class="num">Latitud</th><th class="num">Longitud</th><th></th></tr></thead>
+          <tbody>
+            @for (l of localidades(); track l.id) {
+              <tr><td><b>{{ l.nombre }}</b></td><td class="num">{{ l.latitud ?? '—' }}</td><td class="num">{{ l.longitud ?? '—' }}</td><td><button type="button" class="mini" (click)="editarLocalidad(l)">Editar</button></td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+}

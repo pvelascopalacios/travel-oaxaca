@@ -1,0 +1,22 @@
+:host { display: contents; }
+
+.fila-c {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+
+  &.error input { border-color: var(--grana); }
+  .error-fila { grid-column: 1 / -1; }
+}
+.principal { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; white-space: nowrap; input { width: 20px; height: 20px; min-height: 0; } }
+
+.grupo { display: grid; gap: 8px; h3 { font: 700 0.8rem var(--fuente); color: var(--suave); text-transform: uppercase; letter-spacing: 0.04em; } }
+
+.fila-i { .segmento { justify-self: start; } display: grid; grid-template-columns: 150px auto auto; gap: 12px; align-items: center; justify-content: start; }
+.agregar { display: flex; flex-wrap: wrap; gap: 8px; select { max-width: 260px; } }
+
+@media (max-width: 800px) {
+  .fila-c { grid-template-columns: minmax(0, 1fr) auto; select, input[type='text'], input[type='email'] { grid-column: 1 / -1; } }
+  .fila-i { grid-template-columns: minmax(0, 1fr) auto; strong { grid-column: 1 / -1; } }
+}

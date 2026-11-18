@@ -1,0 +1,240 @@
+<div class="contenedor pagina">
+  @if (!sesion.listo() || cargando()) {
+    <p class="suave" aria-live="polite">{{ i18n.t('cargando') }}</p>
+  } @else if (fallo()) {
+    <div class="tarjeta">
+      <p class="aviso" role="alert">{{ i18n.t('errorCarga') }}</p>
+      <button type="button" class="boton secundario" (click)="cargar()">{{ i18n.t('perfilReintentar') }}</button>
+    </div>
+  } @else if (perfil(); as p) {
+    <header class="cabeza">
+      <div class="avatar" aria-hidden="true">{{ iniciales() }}</div>
+      <div class="quien">
+        <h1>{{ p.nombre }}</h1>
+        <p>{{ p.correo }} · {{ miembroDesde() }}</p>
+      </div>
+      @if (p.correoVerificado) {
+        <span class="sello">{{ i18n.t('perfilVerificado') }}</span>
+      }
+    </header>
+
+    <div class="pestanas" role="group" [attr.aria-label]="i18n.t('perfilSecciones')">
+      @for (s of secciones; track s.clave) {
+        <button type="button" class="chip" [class.on]="seccion() === s.clave" [attr.aria-pressed]="seccion() === s.clave" (click)="abrir(s.clave)">{{ i18n.t(s.titulo) }}</button>
+      }
+    </div>
+
+    @switch (seccion()) {
+      @case ('datos') {
+        <section class="tarjeta" aria-labelledby="t-datos">
+          <h2 id="t-datos">{{ i18n.t('perfilTabDatos') }}</h2>
+          @if (!p.correoVerificado) {
+            <div class="aviso" role="status">
+              <p>{{ avisoCorreo() ?? i18n.t('correoSinConfirmar') }}</p>
+              @if (!avisoCorreo()) {
+                <button type="button" class="enlace" (click)="reenviar()">{{ i18n.t('reenviarCorreo') }}</button>
+              }
+            </div>
+          }
+          <form class="formulario" (ngSubmit)="guardarDatos()" novalidate>
+            <div class="rejilla-campos">
+              <label [class.error]="erroresDatos().nombre || campoDatos('nombre')">
+                {{ i18n.t('perfilNombre') }}
+                <input type="text" name="nombre" autocomplete="name" maxlength="120" [(ngModel)]="nombre" />
+                @if (erroresDatos().nombre; as k) { <span class="msg">{{ i18n.t(k) }}</span> }
+                @else if (campoDatos('nombre'); as m) { <span class="msg">{{ m }}</span> }
+              </label>
+              <label [class.error]="erroresDatos().telefono || campoDatos('telefonoE164')">
+                {{ i18n.t('perfilTelefono') }}
+                <input type="tel" name="telefono" autocomplete="tel" inputmode="tel" [(ngModel)]="telefono" />
+                <span class="ayuda">{{ i18n.t('perfilTelefonoAyuda') }}</span>
+                @if (erroresDatos().telefono; as k) { <span class="msg">{{ i18n.t(k) }}</span> }
+                @else if (campoDatos('telefonoE164'); as m) { <span class="msg">{{ m }}</span> }
+              </label>
+              <label>
+                {{ i18n.t('perfilIdioma') }}
+                <select name="idioma" [(ngModel)]="idioma">
+                  <option value="es">Español</option>
+                  <option value="en">English</option>
+                </select>
+              </label>
+              <label>
+                {{ i18n.t('perfilCorreo') }}
+                <input type="email" name="correo" [value]="p.correo" readonly disabled />
+                <span class="ayuda">{{ i18n.t('perfilCorreoAyuda') }}</span>
+              </label>
+            </div>
+            @if (errorDatos().general; as g) { <p class="aviso" role="alert">{{ g }}</p> }
+            @if (avisoDatos(); as a) { <p class="aviso ok" role="status">{{ a }}</p> }
+            <button type="submit" class="boton" [disabled]="guardandoDatos()">{{ i18n.t(guardandoDatos() ? 'perfilGuardando' : 'perfilGuardar') }}</button>
+          </form>
+        </section>
+      }
+
+      @case ('seguridad') {
+        <section class="tarjeta" aria-labelledby="t-clave">
+          <h2 id="t-clave">{{ i18n.t('perfilCambiarClave') }}</h2>
+          <form class="formulario" (ngSubmit)="cambiarClave()" novalidate>
+            <div class="rejilla-campos">
+              <label [class.error]="erroresClave().actual || campoClave('claveActual')">
+                {{ i18n.t('perfilClaveActual') }}
+                <input type="password" name="actual" autocomplete="current-password" [(ngModel)]="claveActual" />
+                @if (erroresClave().actual; as k) { <span class="msg">{{ i18n.t(k) }}</span> }
+                @else if (campoClave('claveActual'); as m) { <span class="msg">{{ m }}</span> }
+              </label>
+              <span class="hueco" aria-hidden="true"></span>
+              <label [class.error]="erroresClave().nueva || campoClave('claveNueva')">
+                {{ i18n.t('perfilClaveNueva') }}
+                <input type="password" name="nueva" autocomplete="new-password" [(ngModel)]="claveNueva" />
+                @if (erroresClave().nueva; as k) { <span class="msg">{{ i18n.t(k) }}</span> }
+                @else if (campoClave('claveNueva'); as m) { <span class="msg">{{ m }}</span> }
+              </label>
+              <label [class.error]="erroresClave().repetir">
+                {{ i18n.t('perfilClaveRepetir') }}
+                <input type="password" name="repetir" autocomplete="new-password" [(ngModel)]="claveRepetir" />
+                @if (erroresClave().repetir; as k) { <span class="msg">{{ i18n.t(k) }}</span> }
+              </label>
+            </div>
+            <p class="suave pequeno">{{ i18n.t('perfilClaveNota') }}</p>
+            @if (errorClave().general; as g) { <p class="aviso" role="alert">{{ g }}</p> }
+            @if (avisoClave(); as a) { <p class="aviso ok" role="status">{{ a }}</p> }
+            <button type="submit" class="boton" [disabled]="cambiandoClave()">{{ i18n.t('perfilCambiarClave') }}</button>
+          </form>
+        </section>
+
+        <section class="tarjeta" aria-labelledby="t-ses">
+          <h2 id="t-ses">{{ i18n.t('perfilSesiones') }}</h2>
+          <p class="suave">{{ i18n.t('perfilSesionesTexto') }}</p>
+          @if (avisoSesiones(); as a) { <p class="aviso ok" role="status">{{ a }}</p> }
+          @if (errorSesiones(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+          @if (sesiones() === null) {
+            <p class="suave" aria-live="polite">{{ i18n.t('cargando') }}</p>
+          } @else if (falloSesiones()) {
+            <p class="aviso" role="alert">{{ i18n.t('errorCarga') }}</p>
+            <button type="button" class="boton secundario" (click)="reintentarSesiones()">{{ i18n.t('perfilReintentar') }}</button>
+          } @else {
+            <ul class="filas">
+              @for (s of sesionesOrdenadas(); track s.id) {
+                <li class="fila">
+                  <div>
+                    <p class="titulo-fila">{{ nombrePlataforma(s) }} @if (s.actual) { <span class="etiqueta">{{ i18n.t('perfilEstaSesion') }}</span> }</p>
+                    <p class="suave pequeno">{{ detalleSesion(s) }}</p>
+                  </div>
+                  @if (!s.actual) {
+                    <button type="button" class="boton secundario chico" [disabled]="cerrandoSesion() !== null" (click)="cerrarSesion(s)">{{ i18n.t('perfilCerrar') }}</button>
+                  }
+                </li>
+              }
+            </ul>
+            @if (hayOtras()) {
+              <button type="button" class="boton secundario" [disabled]="cerrandoSesion() !== null" (click)="cerrarOtras()">{{ i18n.t('perfilCerrarOtras') }}</button>
+            } @else {
+              <p class="suave pequeno">{{ i18n.t('perfilSinOtras') }}</p>
+            }
+          }
+        </section>
+      }
+
+      @case ('actividad') {
+        <section class="tarjeta" aria-labelledby="t-act">
+          <h2 id="t-act">{{ i18n.t('perfilActividadTitulo') }}</h2>
+          <div class="enlaces">
+            <a class="bloque" [routerLink]="['/', i18n.lang(), 'guardados']">
+              <h3>{{ i18n.t('guardados') }}</h3>
+              <p class="suave">{{ i18n.t('perfilGuardadosTexto') }}</p>
+            </a>
+            <a class="bloque" [routerLink]="['/', i18n.lang(), 'listas']">
+              <h3>{{ i18n.t('perfilListas') }}</h3>
+              <p class="suave">{{ i18n.t('perfilListasTexto') }}</p>
+            </a>
+            <a class="bloque" [routerLink]="['/', i18n.lang(), 'mis-resenas']">
+              <h3>{{ i18n.t('perfilResenas') }}</h3>
+              <p class="suave">{{ i18n.t('perfilResenasTexto') }}</p>
+            </a>
+          </div>
+        </section>
+      }
+
+      @case ('privacidad') {
+        @if (consentimientos() === null || solicitudes() === null) {
+          <p class="suave" aria-live="polite">{{ i18n.t('cargando') }}</p>
+        } @else {
+          @if (falloPrivacidad()) {
+            <div class="tarjeta">
+              <p class="aviso" role="alert">{{ i18n.t('errorCarga') }}</p>
+              <button type="button" class="boton secundario" (click)="reintentarPrivacidad()">{{ i18n.t('perfilReintentar') }}</button>
+            </div>
+          } @else {
+            <section class="tarjeta" aria-labelledby="t-pref">
+              <h2 id="t-pref">{{ i18n.t('perfilPreferencias') }}</h2>
+              @if (avisoPref(); as a) { <p class="aviso ok" role="status">{{ a }}</p> }
+              @if (errorPref(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+              <ul class="filas">
+                @for (t of preferencias; track t) {
+                  <li class="fila">
+                    <div>
+                      <p class="titulo-fila">{{ i18n.t(t === 'analitica' ? 'perfilAnalitica' : 'perfilMarketing') }}</p>
+                      <p class="suave pequeno">{{ i18n.t(t === 'analitica' ? 'perfilAnaliticaTexto' : 'perfilMarketingTexto') }}</p>
+                      @if (fechaPref(t); as f) { <p class="suave pequeno">{{ f }}</p> }
+                    </div>
+                    <button type="button" class="interruptor" role="switch" [class.on]="activa(t)" [attr.aria-checked]="activa(t)"
+                      [attr.aria-label]="i18n.t(t === 'analitica' ? 'perfilAnalitica' : 'perfilMarketing')" [disabled]="guardandoPref() !== null" (click)="alternarPref(t)"></button>
+                  </li>
+                }
+              </ul>
+              <p class="suave pequeno">{{ i18n.t('perfilPrefNota') }}</p>
+            </section>
+
+            <section class="tarjeta" aria-labelledby="t-der">
+              <h2 id="t-der">{{ i18n.t('perfilDerechos') }}</h2>
+              <p class="suave">{{ i18n.t('perfilDerechosTexto') }}</p>
+              <div class="tipos" role="radiogroup" [attr.aria-label]="i18n.t('perfilDerechos')">
+                @for (t of tiposSolicitud; track t) {
+                  <button type="button" class="tipo" role="radio" [class.on]="tipoSolicitud() === t" [attr.aria-checked]="tipoSolicitud() === t" (click)="elegirSolicitud(t)">
+                    <strong>{{ i18n.t(claveTipo(t).titulo) }}</strong>
+                    <span>{{ i18n.t(claveTipo(t).texto) }}</span>
+                  </button>
+                }
+              </div>
+              @if (tipoSolicitud() === 'cancelacion') {
+                <p class="aviso" role="status">{{ i18n.t('perfilCancelacionAviso') }}</p>
+              }
+              <form class="formulario" (ngSubmit)="enviarSolicitud()" novalidate>
+                <label>
+                  {{ i18n.t('perfilDetalle') }}
+                  <textarea name="detalle" rows="3" maxlength="2000" [placeholder]="i18n.t('perfilDetalleAyuda')" [(ngModel)]="detalle"></textarea>
+                </label>
+                @if (errorSolicitud(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+                @if (avisoSolicitud(); as a) { <p class="aviso ok" role="status">{{ a }}</p> }
+                <button type="submit" class="boton" [disabled]="enviandoSolicitud()">{{ i18n.t(enviandoSolicitud() ? 'perfilEnviando' : 'perfilEnviarSolicitud') }}</button>
+              </form>
+            </section>
+
+            <section class="tarjeta" aria-labelledby="t-sol">
+              <h2 id="t-sol">{{ i18n.t('perfilMisSolicitudes') }}</h2>
+              @if (solicitudesOrdenadas().length === 0) {
+                <p class="suave">{{ i18n.t('perfilSinSolicitudes') }}</p>
+              } @else {
+                <ul class="filas">
+                  @for (s of solicitudesOrdenadas(); track s.id) {
+                    <li class="fila">
+                      <div>
+                        <p class="titulo-fila">{{ i18n.t(claveTipo(s.tipo).titulo) }}</p>
+                        <p class="suave pequeno">{{ fechaSolicitud(s) }}</p>
+                      </div>
+                      <span class="estado" [class]="claseEstado(s.estado)">{{ i18n.t(claveEstado(s)) }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+            </section>
+          }
+        }
+      }
+    }
+
+    <section class="tarjeta salir">
+      <button type="button" class="boton secundario" (click)="salir()">{{ i18n.t('salir') }}</button>
+    </section>
+  }
+</div>

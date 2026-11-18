@@ -1,0 +1,203 @@
+@if (cargando() && !ficha()) {
+  <p class="carga" aria-live="polite">Cargando tu negocio…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else if (ficha(); as n) {
+  @if (hero()) {
+    <section class="hero tarjeta" aria-label="Tu negocio">
+      <div class="portada" [style.background-image]="portada() ? 'url(' + portada() + ')' : null">
+        <span class="estado" [class]="estado().clase">● {{ n.estado === 'publicada' ? 'Publicada · en línea' : estado().texto }}</span>
+      </div>
+      <div class="hero-c">
+        <span class="logo" aria-hidden="true">{{ n.nombreComercial.charAt(0).toUpperCase() }}</span>
+        <div class="hero-t">
+          <h1>{{ n.nombreComercial }}</h1>
+          <p class="suave">{{ categoria() }}@if (municipio()) { · {{ municipio() }} }@if (rol()) { · {{ rol() }} }</p>
+        </div>
+        <div class="hero-b">
+          @if (n.estado === 'publicada') { <a class="boton" [href]="urlSitio()" target="_blank" rel="noopener">Ver en el sitio ↗</a> }
+          @if (n.estado === 'pausada' && propietario()) { <button type="button" class="boton" [disabled]="trabajando()" (click)="pedir('reanudar')">Reanudar</button> }
+          <a class="boton secundario" [routerLink]="['/negocios', n.id, 'ficha']">Editar ficha</a>
+          @if (propietario()) {
+            <details class="mas-acc">
+              <summary class="boton secundario" aria-label="Más acciones">⋯</summary>
+              <div class="mas-lista">
+                @if (n.estado === 'publicada') { <button type="button" class="boton secundario" [disabled]="trabajando()" (click)="pedir('pausar')">Pausar</button> }
+                <button type="button" class="boton secundario" [disabled]="trabajando()" (click)="pedir('archivar')">Archivar</button>
+              </div>
+            </details>
+          }
+        </div>
+      </div>
+    </section>
+    @if (confirmando(); as c) {
+      <div class="confirma tarjeta" role="alertdialog" aria-live="assertive">
+        <p>
+          @if (c === 'pausar') { <strong>¿Pausar tu ficha?</strong> Se quita del sitio y de la app hasta que la reanudes. No pierdes nada. }
+          @else { <strong>¿Archivar este negocio?</strong> Deja de aparecer en tu lista y ya no se puede recuperar desde aquí. }
+        </p>
+        <div class="acciones">
+          <button type="button" class="boton" [disabled]="trabajando()" (click)="hacer(c)">{{ c === 'pausar' ? 'Sí, pausar' : 'Sí, archivar' }}</button>
+          <button type="button" class="boton secundario" (click)="cancelar()">Cancelar</button>
+        </div>
+      </div>
+    }
+    @if (!propietario() && n.estado !== 'archivada') { <p class="suave chico">Pausar, reanudar y archivar los hace el propietario del negocio.</p> }
+  } @else {
+  <header class="cab">
+    <div class="fila-cab">
+      <h1>{{ n.nombreComercial }}</h1>
+      <span class="estado" [class]="estado().clase">{{ estado().texto }}</span>
+    </div>
+    <p class="suave">{{ categoria() }}@if (municipio()) { · {{ municipio() }} }@if (rol()) { · {{ rol() }} }</p>
+  </header>
+  }
+
+  @if (aviso(); as a) { <p class="aviso ok" role="status">{{ a }}</p> }
+  @if (error().general; as g) { <p class="aviso" role="alert">{{ g }}</p> }
+
+  @if (paso() > 0 && paso() < 4) {
+    <ol class="pasos tarjeta" aria-label="Avance de tu negocio">
+      @for (p of pasos; track p; let i = $index) {
+        <li [class.ok]="paso() > i + 1" [class.on]="paso() === i + 1" [attr.aria-current]="paso() === i + 1 ? 'step' : null">
+          <span class="d" aria-hidden="true">{{ paso() > i + 1 ? '✓' : i + 1 }}</span>{{ p }}
+        </li>
+      }
+    </ol>
+  }
+
+  @if (siguiente(); as s) {
+    <section class="siguiente" aria-label="Tu siguiente paso">
+      <span class="rotulo">Tu siguiente paso</span>
+      <strong class="t">{{ s.texto }}</strong>
+      <div class="fila-s">
+        @if (s.enlace) {
+          <a class="boton claro" [routerLink]="s.enlace" [queryParams]="s.consulta">Completar →</a>
+        } @else {
+          <button type="button" class="boton claro" [disabled]="trabajando()" (click)="pedir('enviar')">Enviar a revisión</button>
+        }
+        <span class="peq">{{ s.detalle }}</span>
+      </div>
+    </section>
+  }
+
+  <div class="cols">
+  <div class="col-p">
+  @if (n.estado === 'en_revision') {
+    <section class="tarjeta" aria-label="En revisión">
+      <h2>Tu ficha está en revisión</h2>
+      <p>El equipo de Travel Oaxaca la está revisando. Cuando la aprueben se publica en el sitio y en la app.</p>
+      @if (n.revisionVigente?.enviadaEn; as e) { <p class="suave chico">Enviada el {{ fechaEnvio(e) }}.</p> }
+    </section>
+  }
+
+  @if (rechazo(); as r) {
+    <section class="tarjeta" aria-label="Cambios pedidos">
+      <h2>El equipo pidió cambios</h2>
+      <div class="rechazo">
+        <strong>Versión {{ r.version }} · no aprobada</strong><br />
+        @if (r.motivoRechazo) { Motivo: «{{ r.motivoRechazo }}» }
+        @if (r.enviadaEn) { <span class="suave"> Enviada el {{ fechaEnvio(r.enviadaEn) }}.</span> }
+      </div>
+    </section>
+  }
+
+  @if (n.estado === 'borrador') {
+    <section class="tarjeta" aria-label="Para enviarla a revisión">
+      <div class="fila-cab">
+        <h2>Para enviarla a revisión</h2>
+        <div class="puntaje"><span class="pista"><i [style.width.%]="faltantes()?.puntajeFicha ?? n.puntajeFicha"></i></span> Ficha {{ faltantes()?.puntajeFicha ?? n.puntajeFicha }} %</div>
+      </div>
+      <ul class="faltan">
+        @for (q of requisitos(); track q.clave) {
+          <li [class.ok]="!q.falta">
+            <span class="ico" aria-hidden="true">{{ q.falta ? '!' : '✓' }}</span>
+            <span>@if (q.falta) { {{ q.mensaje ?? q.nombre }} } @else { {{ q.nombre }}: listo. }</span>
+            @if (q.falta && q.seccion === 'fotos') { <a [routerLink]="['/negocios', n.id, 'fotos']">Completar →</a> }
+            @else if (q.falta && q.seccion) { <a [routerLink]="['/negocios', n.id, 'ficha']" [queryParams]="{ seccion: q.seccion }">Completar →</a> }
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (!hero()) {
+  <section class="tarjeta" aria-label="Acciones">
+    <h2>Acciones</h2>
+    @if (confirmando(); as c) {
+      <div class="confirma" role="alertdialog" aria-live="assertive">
+        <p>
+          @if (c === 'pausar') { <strong>¿Pausar tu ficha?</strong> Se quita del sitio y de la app hasta que la reanudes. No pierdes nada. }
+          @else { <strong>¿Archivar este negocio?</strong> Deja de aparecer en tu lista y ya no se puede recuperar desde aquí. }
+        </p>
+        <div class="acciones">
+          <button type="button" class="boton" [disabled]="trabajando()" (click)="hacer(c)">{{ c === 'pausar' ? 'Sí, pausar' : 'Sí, archivar' }}</button>
+          <button type="button" class="boton secundario" (click)="cancelar()">Cancelar</button>
+        </div>
+      </div>
+    } @else {
+      <div class="acciones">
+        @if (n.estado === 'borrador') {
+          <button type="button" class="boton" [disabled]="!faltantes()?.puedeEnviar || trabajando()" (click)="pedir('enviar')">Enviar a revisión</button>
+        }
+        @if (n.estado === 'publicada') {
+          <a class="boton" [href]="urlSitio()" target="_blank" rel="noopener">Ver en el sitio</a>
+        }
+        @if (n.estado === 'pausada' && propietario()) {
+          <button type="button" class="boton" [disabled]="trabajando()" (click)="pedir('reanudar')">Reanudar</button>
+        }
+        @if (n.estado !== 'en_revision' && n.estado !== 'archivada') { <a class="boton secundario" [routerLink]="['/negocios', n.id, 'ficha']">Editar ficha</a> }
+        <a class="boton secundario" [routerLink]="['/negocios', n.id, 'reporte']">Reporte mensual</a>
+        @if (propietario() && ((n.estado === 'publicada') || (n.estado !== 'en_revision' && n.estado !== 'archivada'))) {
+          <details class="mas-acc">
+            <summary class="boton secundario">⋯ Más</summary>
+            <div class="mas-lista">
+              @if (n.estado === 'publicada') { <button type="button" class="boton secundario" [disabled]="trabajando()" (click)="pedir('pausar')">Pausar</button> }
+              <button type="button" class="boton secundario" [disabled]="trabajando()" (click)="pedir('archivar')">Archivar</button>
+            </div>
+          </details>
+        }
+      </div>
+      @if (!propietario() && (n.estado === 'publicada' || n.estado === 'pausada')) {
+        <p class="suave chico">Pausar, reanudar y archivar los hace el propietario del negocio.</p>
+      }
+    }
+  </section>
+  }
+  @if (hero()) {
+    <div class="accesos" aria-label="Accesos rápidos">
+      <a class="acc tarjeta" [routerLink]="['/negocios', n.id, 'ficha']">
+        <span class="anillo" [style.--p]="n.puntajeFicha"><b>{{ n.puntajeFicha }}%</b></span>
+        <span><strong>Ficha</strong><span class="suave chico">{{ n.puntajeFicha >= 90 ? 'Lista para crecer' : 'Completa lo que falta para destacar' }}</span></span>
+      </a>
+      <a class="acc tarjeta" [routerLink]="['/negocios', n.id, 'fotos']">
+        <span class="ico fo" aria-hidden="true">🖼️</span>
+        <span><strong>Fotos y ofertas</strong>
+          @if (plan(); as p) { <span class="suave chico">{{ p.uso.fotos }} de {{ p.uso.limiteFotos }} fotos</span><span class="barra"><i [style.width.%]="usoFotos()"></i></span> }
+          @else { <span class="suave chico">Sube y ordena tus fotos</span> }
+        </span>
+      </a>
+      <a class="acc tarjeta" [routerLink]="['/negocios', n.id, 'promociones']">
+        <span class="ico pr" aria-hidden="true">🏷️</span>
+        <span><strong>Promociones</strong><span class="suave chico">{{ textoPromos() }}</span></span>
+      </a>
+      <a class="acc tarjeta" [routerLink]="['/negocios', n.id, 'reporte']">
+        <span class="ico re" aria-hidden="true">📊</span>
+        <span><strong>Reporte mensual</strong><span class="suave chico">Imprímelo o guárdalo en PDF</span></span>
+      </a>
+    </div>
+  }
+
+  </div>
+  <div class="col-r">
+    <app-resultados [negocioId]="n.id" />
+    @if (hero() && plan(); as p) {
+      <section class="tarjeta plan-c" aria-label="Tu plan">
+        <div class="fila-cab"><h2>Tu plan</h2><span class="etiqueta">{{ p.plan.nombre }}</span></div>
+        @if (p.gratuito) { <p class="suave chico">Con un plan mayor ves tus resultados día por día y publicas promociones.</p> }
+        <div><a class="boton secundario" [routerLink]="['/negocios', n.id, 'plan']">{{ p.gratuito ? 'Ver planes' : 'Ver mi plan' }}</a></div>
+      </section>
+    }
+  </div>
+  </div>
+}

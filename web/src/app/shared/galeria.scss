@@ -1,0 +1,141 @@
+:host {
+  display: block;
+}
+
+.rejilla {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  height: clamp(240px, 38vw, 440px);
+  border-radius: var(--radio);
+  overflow: hidden;
+
+  &.una {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+}
+
+button {
+  padding: 0;
+  border: 0;
+  background: var(--cantera);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.grande {
+  grid-row: 1 / span 2;
+}
+
+img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ver-todas {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  height: var(--toque);
+  padding: 0 16px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--noche);
+  font: 600 0.92rem var(--fuente);
+  box-shadow: var(--sombra);
+}
+
+@media (max-width: 720px) {
+  .rejilla {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    height: clamp(220px, 62vw, 320px);
+    border-radius: 14px;
+  }
+
+  .chica {
+    display: none;
+  }
+
+  .grande {
+    grid-row: auto;
+  }
+}
+
+.visor {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 56px 16px 24px;
+  background: rgb(15 19 28 / 94%);
+}
+
+figure {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  max-width: min(1100px, 100%);
+  color: #fff;
+  font-size: 0.9rem;
+
+  img {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: calc(100dvh - 150px);
+    margin-inline: auto;
+    border-radius: 10px;
+    object-fit: contain;
+  }
+}
+
+figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  justify-content: center;
+}
+
+.pie {
+  opacity: 0.8;
+}
+
+.cerrar {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  min-height: var(--toque);
+  padding: 0 16px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--noche);
+  font: 600 0.92rem var(--fuente);
+}
+
+.nav {
+  position: absolute;
+  top: 50%;
+  width: var(--toque);
+  height: var(--toque);
+  margin-top: -22px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--noche);
+  font-size: 1.6rem;
+  line-height: 1;
+
+  &.ant {
+    left: 10px;
+  }
+
+  &.sig {
+    right: 10px;
+  }
+}

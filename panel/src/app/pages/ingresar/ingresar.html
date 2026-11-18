@@ -1,0 +1,19 @@
+<div class="pagina">
+  <div class="caja">
+    <div class="marca"><img src="logo-emblema.png" alt="" width="40" height="40" /><span>Travel Oaxaca<small>Panel de administración</small></span></div>
+    <h1>Ingresa al panel</h1>
+    <p class="suave">Solo para el equipo de Travel Oaxaca.</p>
+    <form (ngSubmit)="enviar()" novalidate>
+      <label [class.error]="campo('correo')">Correo
+        <input type="email" name="correo" autocomplete="email" inputmode="email" maxlength="254" required [(ngModel)]="correo" />
+        @if (campo('correo'); as m) { <span class="msg">{{ m }}</span> }
+      </label>
+      <label [class.error]="campo('clave')">Contraseña
+        <input type="password" name="clave" autocomplete="current-password" maxlength="128" required [(ngModel)]="clave" />
+        @if (campo('clave'); as m) { <span class="msg">{{ m }}</span> }
+      </label>
+      @if (error().general; as g) { <p class="aviso" role="alert">{{ g }}</p> }
+      <button type="submit" class="boton" [disabled]="enviando()">{{ enviando() ? 'Entrando…' : 'Ingresar' }}</button>
+    </form>
+  </div>
+</div>

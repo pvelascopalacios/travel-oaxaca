@@ -1,0 +1,50 @@
+<header class="cab fila-cab">
+  <div>
+    <h1>{{ textos.titulo }}</h1>
+    <p class="suave chico">{{ textos.ayuda }}</p>
+  </div>
+  <a class="mini-b ok enlace-b" [routerLink]="['/', tipo, 'nuevo']">+ {{ textos.nuevo }}</a>
+</header>
+
+<div class="filtros">
+  <label class="q">Buscar
+    <input type="search" name="q" placeholder="Nombre…" autocomplete="off" [ngModel]="textoBusqueda()" (ngModelChange)="buscar($event)" />
+  </label>
+  <label>Estado
+    <select name="estado" [ngModel]="estado() ?? ''" (ngModelChange)="navegar({ estado: $event || null })">
+      <option value="">Todos los estados</option>
+      @for (e of estados; track e.clave) { <option [value]="e.clave">{{ e.texto }}</option> }
+    </select>
+  </label>
+</div>
+
+@if (cargando()) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else if (filas().length === 0) {
+  <p class="vacio">{{ textos.vacio }}</p>
+} @else {
+  <div class="tarjeta tabla">
+    <table>
+      <thead><tr><th>Nombre</th><th>Estado</th><th>Actualizado</th><th></th></tr></thead>
+      <tbody>
+        @for (f of filas(); track f.id) {
+          <tr>
+            <td><a class="nombre" [routerLink]="['/', tipo, f.id]">{{ f.nombre }}</a></td>
+            <td><span class="st" [class]="estadoInfo(f.estado).clase">{{ estadoInfo(f.estado).texto }}</span></td>
+            <td class="nw">{{ fecha(f.actualizadoEn) }}</td>
+            <td class="num"><a class="mini-b enlace-b" [routerLink]="['/', tipo, f.id]">Editar</a></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="paginas">
+    <span class="chico suave">Mostrando {{ desde() }}–{{ hasta() }} de {{ total() }}</span>
+    <div class="acciones">
+      <a class="mini-b enlace-b" [class.inactivo]="!hayAnterior()" [routerLink]="['/', tipo]" [queryParams]="consulta({ pagina: nPagina() > 1 ? '' + nPagina() : null })">← Anterior</a>
+      <a class="mini-b enlace-b" [class.inactivo]="!haySiguiente()" [routerLink]="['/', tipo]" [queryParams]="consulta({ pagina: '' + (nPagina() + 2) })">Siguiente →</a>
+    </div>
+  </div>
+}

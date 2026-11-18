@@ -1,0 +1,54 @@
+<header class="cab fila-cab">
+  <div>
+    <h1>Inicio del sitio</h1>
+    <p class="suave chico">Lo que se ve en la portada: destacados, pueblos, historias y Reels. Sin foto aprobada, un bloque no se muestra.</p>
+  </div>
+  <a class="mini-b ok enlace-b" routerLink="/inicio/nuevo" [queryParams]="{ tipo: tipoActual() }">+ Nuevo bloque</a>
+</header>
+
+<nav class="tabs" aria-label="Tipos de bloque">
+  @for (t of tipos; track t.clave) {
+    <a routerLink="/inicio" [queryParams]="{ tipo: t.clave }" [class.on]="tipoActual() === t.clave">{{ t.plural }} @if (conteos()[t.clave] !== undefined) { <i>{{ conteos()[t.clave] }}</i> }</a>
+  }
+</nav>
+
+<div class="filtros">
+  <label>Estado
+    <select name="estado" [ngModel]="estado() ?? ''" (ngModelChange)="navegar({ estado: $event || null })">
+      <option value="">Todos los estados</option>
+      @for (e of estados; track e.clave) { <option [value]="e.clave">{{ e.texto }}</option> }
+    </select>
+  </label>
+</div>
+
+@if (cargando()) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else if (filas().length === 0) {
+  <p class="vacio">No hay bloques de este tipo con estos filtros.</p>
+} @else {
+  <ul>
+    @for (b of filas(); track b.id) {
+      <li class="item">
+        <div class="ico">{{ tipoTexto(b.tipo).slice(0, 4) }}</div>
+        <div>
+          <h3><a [routerLink]="['/inicio', b.id]">{{ b.titulo || 'Sin título' }}</a></h3>
+          <div class="meta">
+            <span class="st" [class]="estadoInfo(b.estado).clase">{{ estadoInfo(b.estado).texto }}</span>
+            <span class="tag">Orden {{ b.orden }}</span>
+            @if (b.publicarDesde || b.publicarHasta) { <span class="chico suave">Vigente {{ b.publicarDesde ? fecha(b.publicarDesde) : 'ya' }} → {{ b.publicarHasta ? fecha(b.publicarHasta) : 'sin fin' }}</span> }
+          </div>
+        </div>
+        <a class="mini-b enlace-b" [routerLink]="['/inicio', b.id]">Editar</a>
+      </li>
+    }
+  </ul>
+  <div class="paginas">
+    <span class="chico suave">Mostrando {{ desde() }}–{{ hasta() }} de {{ total() }}</span>
+    <div class="acciones">
+      <a class="mini-b enlace-b" [class.inactivo]="!hayAnterior()" routerLink="/inicio" [queryParams]="consulta({ pagina: nPagina() > 1 ? '' + nPagina() : null })">← Anterior</a>
+      <a class="mini-b enlace-b" [class.inactivo]="!haySiguiente()" routerLink="/inicio" [queryParams]="consulta({ pagina: '' + (nPagina() + 2) })">Siguiente →</a>
+    </div>
+  </div>
+}

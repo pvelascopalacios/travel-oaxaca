@@ -1,0 +1,5 @@
+@use '../comun';
+td.wrap { white-space: normal; overflow-wrap: anywhere; min-width: 120px; max-width: 320px; }
+td.nw { white-space: nowrap; }
+.detalle-fila > td { background: var(--cantera); }
+.difs { background: var(--papel); border-radius: 8px; th, td { padding: 6px 8px; } .antes { color: var(--rojo-texto); } .despues { color: var(--sierra); } }

@@ -1,0 +1,164 @@
+<header class="cab">
+  <h1>Planes y precios</h1>
+  <p class="suave chico">Lo que ofrece cada plan, cuánto cuesta y los cupones. Los cambios aplican a las próximas activaciones; no tocan suscripciones ya hechas.</p>
+</header>
+
+<nav class="tabs" aria-label="Secciones del catálogo">
+  <a routerLink="." [queryParams]="{ tab: null }" [class.on]="tabActual() === 'planes'">Planes</a>
+  <a routerLink="." [queryParams]="{ tab: 'precios' }" [class.on]="tabActual() === 'precios'">Precios</a>
+  <a routerLink="." [queryParams]="{ tab: 'cupones' }" [class.on]="tabActual() === 'cupones'">Cupones</a>
+</nav>
+
+@if (aviso(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+@if (fallo(); as f) { <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p> }
+
+@if (tabActual() === 'planes') {
+  @if (planes() === null) { <p class="carga">Cargando…</p> }
+  @else {
+    <ul>
+      @for (p of planes(); track p.id) {
+        <li class="fila-plan">
+          <div class="plan-cab">
+            <h3>{{ p.nombre }} <small class="suave">({{ p.clave }})</small> @if (!p.activo) { <span class="st gris">Inactivo</span> }</h3>
+            <p class="chico suave">{{ p.limiteFotos }} fotos · {{ p.limiteOfertas }} ofertas
+              @if (p.veEstadisticas) { · estadísticas } @if (p.permitePromociones) { · promociones } @if (p.permitePatrocinio) { · patrocinio }</p>
+          </div>
+          <button type="button" class="mini-b" (click)="editarPlan(p)">Editar</button>
+          @if (editandoPlan() === p.id && formPlan) {
+            <form class="inline" (ngSubmit)="guardarPlan(p)" novalidate>
+              <div class="rejilla">
+                <label [class.error]="erroresPlan()['nombre']">Nombre <input name="nombre" maxlength="70" [(ngModel)]="formPlan.nombre" />@if (erroresPlan()['nombre']; as m) { <span class="msg">{{ m }}</span> }</label>
+                <label [class.error]="erroresPlan()['limiteFotos']">Límite de fotos <input name="fotos" inputmode="numeric" [(ngModel)]="formPlan.limiteFotos" />@if (erroresPlan()['limiteFotos']; as m) { <span class="msg">{{ m }}</span> }</label>
+                <label [class.error]="erroresPlan()['limiteOfertas']">Límite de ofertas <input name="ofertas" inputmode="numeric" [(ngModel)]="formPlan.limiteOfertas" />@if (erroresPlan()['limiteOfertas']; as m) { <span class="msg">{{ m }}</span> }</label>
+              </div>
+              <div class="casillas">
+                <label class="casilla"><input type="checkbox" name="est" [(ngModel)]="formPlan.veEstadisticas" /> Ve estadísticas</label>
+                <label class="casilla"><input type="checkbox" name="pro" [(ngModel)]="formPlan.permitePromociones" /> Permite promociones</label>
+                <label class="casilla"><input type="checkbox" name="pat" [(ngModel)]="formPlan.permitePatrocinio" /> Permite patrocinio</label>
+                <label class="casilla"><input type="checkbox" name="act" [(ngModel)]="formPlan.activo" [disabled]="p.clave === 'gratis'" /> Activo</label>
+              </div>
+              @if (errorApiPlan(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+              <div class="acciones">
+                <button type="submit" class="mini-b ok" [disabled]="trabajando()">{{ trabajando() ? 'Guardando…' : 'Guardar plan' }}</button>
+                <button type="button" class="mini-b" (click)="editandoPlan.set(null)">Cancelar</button>
+              </div>
+            </form>
+          }
+        </li>
+      }
+    </ul>
+  }
+}
+
+@if (tabActual() === 'precios') {
+  <p class="nota chico">Si hay varios precios vigentes para un plan, gana el de <b>categoría</b>, luego el de <b>destino</b> y al final el <b>general</b>. El plan Gratis no lleva precio.</p>
+  <div class="acciones"><button type="button" class="mini-b ok" (click)="abrirPrecio()">Nuevo precio</button></div>
+
+  @if (nuevoPrecio()) {
+    <form class="tarjeta" (ngSubmit)="guardarPrecio()" novalidate aria-label="Nuevo precio">
+      <h2>Nuevo precio</h2>
+      <div class="rejilla">
+        <label [class.error]="erroresPrecio()['planId']">Plan
+          <select name="plan" [(ngModel)]="formPrecio.planId"><option value="">Elige un plan</option>@for (p of planesConPrecio(); track p.id) { <option [value]="p.id">{{ p.nombre }}</option> }</select>
+          @if (erroresPrecio()['planId']; as m) { <span class="msg">{{ m }}</span> }
+        </label>
+        <label>Periodo <select name="periodo" [(ngModel)]="formPrecio.periodo"><option value="mensual">Mensual</option><option value="anual">Anual</option></select></label>
+        <label [class.error]="erroresPrecio()['monto']">Monto (MXN) <input name="monto" inputmode="decimal" [(ngModel)]="formPrecio.monto" />@if (erroresPrecio()['monto']; as m) { <span class="msg">{{ m }}</span> }</label>
+        <label>Destino <span class="ayuda">(opcional)</span>
+          <select name="destino" [(ngModel)]="formPrecio.destinoId"><option value="">Todos los destinos</option>@for (d of destinos(); track d.id) { <option [value]="d.id">{{ d.nombre }}</option> }</select>
+        </label>
+        <label>Categoría <span class="ayuda">(opcional)</span>
+          <select name="categoria" [(ngModel)]="formPrecio.categoriaId"><option value="">Todas las categorías</option>@for (c of categorias(); track c.id) { <option [value]="c.id">{{ c.etiqueta }}</option> }</select>
+        </label>
+        <label>Vigente desde <span class="ayuda">(vacío = hoy)</span> <input type="date" name="desde" [(ngModel)]="formPrecio.vigenteDesde" /></label>
+        <label [class.error]="erroresPrecio()['vigenteHasta']">Vigente hasta <span class="ayuda">(opcional)</span> <input type="date" name="hasta" [(ngModel)]="formPrecio.vigenteHasta" />@if (erroresPrecio()['vigenteHasta']; as m) { <span class="msg">{{ m }}</span> }</label>
+      </div>
+      @if (errorApiPrecio(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+      <div class="acciones">
+        <button type="submit" class="mini-b ok" [disabled]="trabajando()">{{ trabajando() ? 'Guardando…' : 'Guardar precio' }}</button>
+        <button type="button" class="mini-b" (click)="nuevoPrecio.set(false)">Cancelar</button>
+      </div>
+    </form>
+  }
+
+  @if (precios() === null) { <p class="carga">Cargando…</p> }
+  @else if (preciosOrdenados().length === 0) { <p class="vacio">Aún no hay precios. Sin precio, ventas tiene que escribir el monto al activar un plan.</p> }
+  @else {
+    <div class="tarjeta tabla">
+      <table>
+        <thead><tr><th>Plan</th><th>Periodo</th><th>Alcance</th><th class="num">Monto</th><th>Vigencia</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+          @for (p of preciosOrdenados(); track p.id) {
+            <tr>
+              <td>{{ planNombre(p.planId) }}</td><td>{{ periodo(p.periodo) }}</td><td>{{ alcance(p) }}</td>
+              <td class="num">{{ dinero(p.monto, p.moneda) }}</td>
+              <td class="nw">{{ fecha(p.vigenteDesde) }} → {{ p.vigenteHasta ? fecha(p.vigenteHasta) : 'sin fin' }}</td>
+              <td><span class="st" [class]="estadoP(p) === 'vigente' ? 'ok' : estadoP(p) === 'futuro' ? 'cambio' : 'gris'">{{ estadoP(p) === 'vigente' ? 'Vigente' : estadoP(p) === 'futuro' ? 'Futuro' : 'Cerrado' }}</span></td>
+              <td>@if (estadoP(p) !== 'cerrado') { <button type="button" class="mini-b" (click)="abrirCierre(p)">Cerrar</button> }</td>
+            </tr>
+            @if (cerrandoPrecio() === p.id) {
+              <tr class="cierre"><td colspan="7">
+                <form class="inline-fila" (ngSubmit)="cerrarPrecio(p)">
+                  <label>Cerrar el precio el <span class="ayuda">(vacío = hoy)</span> <input type="date" name="hastaCierre" [(ngModel)]="hastaCierre" [min]="p.vigenteDesde" /></label>
+                  <button type="submit" class="mini-b mal" [disabled]="trabajando()">{{ trabajando() ? 'Cerrando…' : 'Sí, cerrar precio' }}</button>
+                  <button type="button" class="mini-b" (click)="cerrandoPrecio.set(null)">No cerrar</button>
+                </form>
+                @if (errorApiPrecio(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+              </td></tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}
+
+@if (tabActual() === 'cupones') {
+  <div class="acciones"><button type="button" class="mini-b ok" (click)="abrirCupon()">Nuevo cupón</button></div>
+
+  @if (nuevoCupon() || editandoCupon()) {
+    <form class="tarjeta" (ngSubmit)="guardarCupon()" novalidate [attr.aria-label]="editandoCupon() ? 'Editar cupón' : 'Nuevo cupón'">
+      <h2>{{ editandoCupon() ? 'Editar cupón ' + editandoCupon()!.codigo : 'Nuevo cupón' }}</h2>
+      @if (editandoCupon()) { <p class="chico suave">Solo se puede cambiar la descripción, el máximo de usos y la fecha final. Lleva {{ editandoCupon()!.usos }} usos.</p> }
+      <div class="rejilla">
+        @if (!editandoCupon()) {
+          <label [class.error]="erroresCupon()['codigo']">Código <input name="codigo" maxlength="30" autocomplete="off" [(ngModel)]="formCupon.codigo" />@if (erroresCupon()['codigo']; as m) { <span class="msg">{{ m }}</span> }</label>
+          <label>Tipo <select name="tipo" [(ngModel)]="formCupon.tipo">@for (t of tipos; track t.clave) { <option [value]="t.clave">{{ t.texto }}</option> }</select></label>
+          <label [class.error]="erroresCupon()['valor']">Valor <span class="ayuda">({{ formCupon.tipo === 'pct' ? '% de descuento' : formCupon.tipo === 'monto' ? 'pesos de descuento' : 'periodos gratis' }})</span> <input name="valor" inputmode="decimal" [(ngModel)]="formCupon.valor" />@if (erroresCupon()['valor']; as m) { <span class="msg">{{ m }}</span> }</label>
+          <label>Aplica a <select name="aplicaA" [(ngModel)]="formCupon.aplicaA"><option value="suscripcion">Suscripción</option><option value="patrocinio">Patrocinio</option></select></label>
+          <label>Vigente desde <span class="ayuda">(opcional)</span> <input type="date" name="desde" [(ngModel)]="formCupon.vigenteDesde" /></label>
+        }
+        <label [class.error]="erroresCupon()['maxUsos']">Máximo de usos <span class="ayuda">(vacío = sin límite)</span> <input name="maxUsos" inputmode="numeric" [(ngModel)]="formCupon.maxUsos" />@if (erroresCupon()['maxUsos']; as m) { <span class="msg">{{ m }}</span> }</label>
+        <label [class.error]="erroresCupon()['vigenteHasta']">Vigente hasta <span class="ayuda">(opcional)</span> <input type="date" name="hasta" [(ngModel)]="formCupon.vigenteHasta" />@if (erroresCupon()['vigenteHasta']; as m) { <span class="msg">{{ m }}</span> }</label>
+      </div>
+      <label [class.error]="erroresCupon()['descripcion']">Descripción <span class="ayuda">(opcional, hasta 200)</span> <input name="descripcion" maxlength="220" [(ngModel)]="formCupon.descripcion" />@if (erroresCupon()['descripcion']; as m) { <span class="msg">{{ m }}</span> }</label>
+      @if (errorApiCupon(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+      <div class="acciones">
+        <button type="submit" class="mini-b ok" [disabled]="trabajando()">{{ trabajando() ? 'Guardando…' : 'Guardar cupón' }}</button>
+        <button type="button" class="mini-b" (click)="cerrarCupon()">Cancelar</button>
+      </div>
+    </form>
+  }
+
+  @if (cupones() === null) { <p class="carga">Cargando…</p> }
+  @else if (cupones()!.length === 0) { <p class="vacio">Aún no hay cupones.</p> }
+  @else {
+    <div class="tarjeta tabla">
+      <table>
+        <thead><tr><th>Código</th><th>Descuento</th><th>Aplica a</th><th class="num">Usos</th><th>Vigencia</th><th>Estado</th><th></th></tr></thead>
+        <tbody>
+          @for (c of cupones(); track c.id) {
+            <tr>
+              <td><b class="codigo">{{ c.codigo }}</b>@if (c.descripcion) { <br /><small class="suave">{{ c.descripcion }}</small> }</td>
+              <td>{{ tipoTexto(c.tipo) }}: {{ valorTexto(c) }}</td><td>{{ aplicaA(c.aplicaA) }}</td>
+              <td class="num">{{ c.usos }}{{ c.maxUsos ? ' / ' + c.maxUsos : '' }}</td>
+              <td class="nw">{{ c.vigenteDesde ? fecha(c.vigenteDesde) : 'ya' }} → {{ c.vigenteHasta ? fecha(c.vigenteHasta) : 'sin fin' }}</td>
+              <td><span class="st" [class]="vigenteCupon(c) ? 'ok' : 'gris'">{{ vigenteCupon(c) ? 'Vigente' : 'No vigente' }}</span></td>
+              <td><button type="button" class="mini-b" (click)="editarCupon(c)">Editar</button></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}

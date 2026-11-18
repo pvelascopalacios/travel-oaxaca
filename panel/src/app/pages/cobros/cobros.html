@@ -1,0 +1,189 @@
+<header class="cab">
+  <h1>Cobros</h1>
+  <p class="suave chico">Confirma pagos, activa o renueva planes y registra otros cobros. Aquí no hay pasarela: tú confirmas cuando el dinero llegó.</p>
+</header>
+
+<nav class="tabs" aria-label="Secciones de cobros">
+  <a routerLink="." [queryParams]="{ tab: null, negocio: null, nombre: null }" [class.on]="tabActual() === 'pendientes'">Pagos pendientes @if (pagos() !== null) { <i>{{ pagos()!.length }}</i> }</a>
+  <a routerLink="." [queryParams]="{ tab: 'activar' }" queryParamsHandling="merge" [class.on]="tabActual() === 'activar'">Activar o renovar plan</a>
+  <a routerLink="." [queryParams]="{ tab: 'otro', negocio: null, nombre: null }" [class.on]="tabActual() === 'otro'">Otro cobro</a>
+</nav>
+
+@if (tabActual() === 'pendientes') {
+  @if (avisoPagos(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+  @if (falloPagos(); as f) {
+    <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargarPagos()">Reintentar</button></p>
+  } @else if (pagos() === null) {
+    <p class="carga" aria-live="polite">Cargando…</p>
+  } @else if (ordenados().length === 0) {
+    <app-vacio tipo="ok" icono="cash" titulo="No hay pagos por confirmar"><p>Cuando un negocio reporte un pago, aparecerá aquí para que lo confirmes.</p></app-vacio>
+  } @else {
+    <ul>
+      @for (p of ordenados(); track p.id) {
+        <li class="pago">
+          <div class="pago-datos">
+            <h3><a [routerLink]="['/negocios', p.negocioId]" [queryParams]="{ tab: 'plan' }">{{ nombres()[p.negocioId] || 'Negocio' }}</a></h3>
+            <div class="meta">
+              <span class="tag">{{ conceptoTexto(p.concepto) }}</span>
+              <span class="tag">{{ metodoTexto(p.metodo) }}</span>
+              @if (p.referenciaExterna) { <span class="tag">Ref. {{ p.referenciaExterna }}</span> }
+              <span class="suave chico">{{ fecha(p.creadoEn) }}</span>
+            </div>
+          </div>
+          <div class="pago-monto"><b>{{ dinero(p.monto, p.moneda) }}</b> <span class="st" [class]="estPago(p.estado).clase">{{ estPago(p.estado).texto }}</span></div>
+          <div class="acciones">
+            @for (a of acciones(p.estado); track a.estado) {
+              <button type="button" class="mini-b" [class.mal]="a.peligro" [class.ok]="!a.peligro" (click)="abrirAccion(p, a)">{{ a.texto }}</button>
+            }
+          </div>
+          @if (enAccion(); as ea) {
+            @if (ea.id === p.id) {
+              <form class="inline" (ngSubmit)="confirmarAccion()" novalidate>
+                <label>Referencia <span class="ayuda">(opcional, ej. folio de la transferencia)</span>
+                  <input name="ref" [(ngModel)]="referenciaAccion" maxlength="110" />
+                </label>
+                @if (errorAccion(); as m) { <p class="aviso" role="alert">{{ m }}</p> }
+                <div class="acciones">
+                  <button type="submit" class="mini-b ok" [disabled]="trabajando()">{{ trabajando() ? 'Guardando…' : 'Confirmar: ' + ea.texto }}</button>
+                  <button type="button" class="mini-b" [disabled]="trabajando()" (click)="enAccion.set(null)">Cancelar</button>
+                </div>
+              </form>
+            }
+          }
+        </li>
+      }
+    </ul>
+  }
+}
+
+@if (tabActual() === 'activar') {
+  @if (resultado(); as r) {
+    <section class="tarjeta resultado" aria-label="Resultado" role="status">
+      <h2>Plan {{ r.suscripcion.planNombre }} activado</h2>
+      <p>{{ elegido()?.nombre }} · {{ periodoTexto(r.suscripcion.periodo) }} · del {{ fecha(r.suscripcion.inicio) }} al {{ fecha(r.suscripcion.fin) }}</p>
+      <p>Pago de {{ dinero(r.pago.monto, r.pago.moneda) }} <span class="st" [class]="estPago(r.pago.estado).clase">{{ estPago(r.pago.estado).texto }}</span>@if (r.pago.estado === 'pendiente') { · quedó en “Pagos pendientes” hasta que lo confirmes }</p>
+      <div class="acciones">
+        @if (elegido(); as n) { <a class="mini-b enlace-b" [routerLink]="['/negocios', n.id]" [queryParams]="{ tab: 'plan' }">Ver el negocio</a> }
+        <button type="button" class="mini-b" (click)="otraActivacion()">Activar otro plan</button>
+      </div>
+    </section>
+  } @else {
+    <form class="tarjeta" (ngSubmit)="activar()" novalidate aria-label="Activar o renovar plan">
+      <app-selector-negocio titulo="Negocio" [elegido]="elegido()" [error]="errores()['negocioId'] ?? null" (cambio)="elegirNegocio($event)" />
+
+      @if (elegido()) {
+        <p class="situacion chico">
+          @if (suscripciones() === null) { Revisando su plan actual… }
+          @else if (vigente(); as v) { Hoy tiene el plan <b>{{ v.planNombre }}</b> ({{ periodoTexto(v.periodo) }}) hasta el {{ fecha(v.fin) }}. }
+          @else { Hoy está en el plan Gratis. }
+        </p>
+      }
+
+      <div class="rejilla">
+        <label [class.error]="errores()['planClave']">Plan
+          <select name="plan" [(ngModel)]="form.planClave" (ngModelChange)="cambio()">
+            <option value="">Elige un plan</option>
+            @for (p of planesCobrables(); track p.clave) { <option [value]="p.clave">{{ p.nombre }}</option> }
+          </select>
+          @if (errores()['planClave']; as m) { <span class="msg">{{ m }}</span> }
+        </label>
+        <label>Periodo
+          <select name="periodo" [(ngModel)]="form.periodo" (ngModelChange)="cambio()">
+            <option value="anual">Anual</option>
+            <option value="mensual">Mensual</option>
+          </select>
+        </label>
+        <label [class.error]="errores()['monto']">Monto <span class="ayuda">(vacío = precio del catálogo)</span>
+          <input name="monto" inputmode="decimal" placeholder="{{ precioGeneral() ? precioGeneral()!.monto : '0.00' }}" [(ngModel)]="form.monto" (ngModelChange)="cambio()" />
+          @if (errores()['monto']; as m) { <span class="msg">{{ m }}</span> }
+        </label>
+        <label [class.error]="errores()['cupon'] || cuponInvalido()">Cupón <span class="ayuda">(opcional)</span>
+          <input name="cupon" autocomplete="off" [(ngModel)]="form.cupon" (ngModelChange)="cambio()" />
+          @if (errores()['cupon']; as m) { <span class="msg">{{ m }}</span> }
+          @else if (cuponInvalido()) { <span class="msg">Este cupón no aplica a suscripciones o ya no está vigente.</span> }
+          @else if (cuponElegido(); as c) { <span class="ayuda">{{ c.descripcion || 'Cupón válido' }}: {{ valorCupon(c) }}</span> }
+          @else if (form.cupon.trim() && cupones() === null) { <span class="ayuda">Se valida al activar.</span> }
+          @else if (form.cupon.trim()) { <span class="msg">No encontramos ese cupón.</span> }
+        </label>
+      </div>
+
+      @if (planElegido()) {
+        @if (!precioGeneral() && !form.monto.trim()) {
+          <p class="aviso ambar" role="status">No hay un precio general vigente para este plan y periodo. Escribe el monto o captúralo en Planes y precios.</p>
+        } @else if (hayEspecificos() && !form.monto.trim()) {
+          <p class="aviso ambar" role="status">Hay precios por destino o categoría para este plan. Aquí se muestra el general; la API aplica el que corresponda al negocio.</p>
+        }
+      }
+
+      <div class="rejilla">
+        @if (cobraAlgo()) {
+          <label [class.error]="errores()['metodo']">Método de pago
+            <select name="metodo" [(ngModel)]="form.metodo">
+              <option value="transferencia">Transferencia</option>
+              <option value="efectivo">Efectivo</option>
+              <option value="enlace_pago">Enlace de pago</option>
+            </select>
+            @if (errores()['metodo']; as m) { <span class="msg">{{ m }}</span> }
+          </label>
+          <label [class.error]="errores()['referencia']">Referencia <span class="ayuda">(opcional)</span>
+            <input name="referencia" maxlength="110" [(ngModel)]="form.referencia" />
+            @if (errores()['referencia']; as m) { <span class="msg">{{ m }}</span> }
+          </label>
+        }
+        <label class="casilla"><input type="checkbox" name="pagado" [(ngModel)]="form.pagado" /> El pago ya se recibió</label>
+      </div>
+
+      @if (planElegido(); as pl) {
+        <aside class="resumen" aria-label="Resumen">
+          <h3>Resumen</h3>
+          <dl>
+            <div><dt>Plan</dt><dd>{{ pl.nombre }} · {{ periodoTexto(form.periodo) }}</dd></div>
+            <div><dt>Cobro</dt><dd>@if (cobro().total === null) { Sin precio: se necesita un monto } @else if (cobro().gratis) { Sin costo }@else { {{ dinero(cobro().total!) }} }@if (cobro().periodos > 1) { · {{ cobro().periodos }} periodos gratis }</dd></div>
+            @if (vigencia(); as v) {
+              <div><dt>Vigencia</dt><dd>del {{ fecha(v.desde) }} al {{ fecha(v.hasta) }}@if (v.extiende) { <span class="suave"> · se suma al plan que ya tiene</span> } @else if (vigente()) { <span class="suave"> · reemplaza el plan actual desde hoy</span> }</dd></div>
+            }
+            <div><dt>Pago</dt><dd>{{ form.pagado ? 'Recibido' : 'Queda pendiente de confirmar' }}</dd></div>
+          </dl>
+        </aside>
+      }
+
+      @if (errorApi(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+      <div class="acciones"><button type="submit" class="mini-b ok" [disabled]="trabajando()">{{ trabajando() ? 'Activando…' : 'Activar plan' }}</button></div>
+    </form>
+  }
+}
+
+@if (tabActual() === 'otro') {
+  @if (pagoRegistrado(); as p) {
+    <section class="tarjeta resultado" role="status">
+      <h2>Cobro registrado</h2>
+      <p>{{ dinero(p.monto, p.moneda) }} · {{ metodoTexto(p.metodo) }} <span class="st" [class]="estPago(p.estado).clase">{{ estPago(p.estado).texto }}</span></p>
+      <div class="acciones"><button type="button" class="mini-b" (click)="otroNuevo()">Registrar otro</button></div>
+    </section>
+  } @else {
+    <form class="tarjeta" (ngSubmit)="registrarOtro()" novalidate aria-label="Registrar otro cobro">
+      <app-selector-negocio titulo="Negocio" [elegido]="elegidoOtro()" [error]="erroresOtro()['negocioId'] ?? null" (cambio)="elegidoOtro.set($event)" />
+      <div class="rejilla">
+        <label [class.error]="erroresOtro()['monto']">Monto
+          <input name="monto" inputmode="decimal" placeholder="0.00" [(ngModel)]="formOtro.monto" />
+          @if (erroresOtro()['monto']; as m) { <span class="msg">{{ m }}</span> }
+        </label>
+        <label>Método de pago
+          <select name="metodo" [(ngModel)]="formOtro.metodo">
+            <option value="transferencia">Transferencia</option>
+            <option value="efectivo">Efectivo</option>
+            <option value="enlace_pago">Enlace de pago</option>
+          </select>
+        </label>
+        <label [class.error]="erroresOtro()['referencia']">Referencia <span class="ayuda">(opcional)</span>
+          <input name="referencia" maxlength="110" [(ngModel)]="formOtro.referencia" />
+          @if (erroresOtro()['referencia']; as m) { <span class="msg">{{ m }}</span> }
+        </label>
+        <label class="casilla"><input type="checkbox" name="pagado" [(ngModel)]="formOtro.pagado" /> El pago ya se recibió</label>
+      </div>
+      <p class="chico suave">Para cobros que no son una suscripción. Los pagos de patrocinios se registran desde Patrocinios.</p>
+      @if (errorApiOtro(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+      <div class="acciones"><button type="submit" class="mini-b ok" [disabled]="trabajando()">{{ trabajando() ? 'Guardando…' : 'Registrar cobro' }}</button></div>
+    </form>
+  }
+}

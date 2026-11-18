@@ -1,0 +1,47 @@
+<header class="cab">
+  <h1>Notificaciones</h1>
+  <p class="suave chico">Correos y avisos en cola. Los que fallaron se pueden reintentar; el resto es solo consulta.</p>
+</header>
+
+@if (aviso(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+
+<div class="tabs" role="group" aria-label="Estado">
+  <a tabindex="0" role="button" [class.on]="estado === ''" (click)="porEstado('')" (keydown.enter)="porEstado('')">Todas</a>
+  @for (e of estados; track e.clave) { <a tabindex="0" role="button" [class.on]="estado === e.clave" (click)="porEstado(e.clave)" (keydown.enter)="porEstado(e.clave)">{{ e.texto }}</a> }
+</div>
+<div class="filtros">
+  <label class="filtro">Plantilla <select name="plantilla" [(ngModel)]="plantilla" (change)="filtrar()"><option value="">Todas</option>@for (p of plantillas(); track p.id) { <option [value]="p.clave">{{ p.clave }}</option> }</select></label>
+</div>
+
+@if (fallo(); as f) { <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p> }
+@if (datos(); as d) {
+  @if (d.elementos.length === 0) { <p class="vacio">No hay notificaciones con esos filtros.</p> }
+  @else {
+    <div class="tarjeta tabla">
+      <table>
+        <thead><tr><th>Plantilla</th><th>Canal</th><th>Destinatario</th><th>Estado</th><th class="num">Intentos</th><th>Programada</th><th>Enviada</th><th>Error</th><th></th></tr></thead>
+        <tbody>
+          @for (n of d.elementos; track n.id) {
+            <tr>
+              <td class="wrap">{{ n.plantillaClave }}</td><td>{{ n.canal }}</td><td class="wrap">{{ n.destinatario }}</td>
+              <td><span class="st" [class]="estadoInfo(n.estado).clase">{{ estadoInfo(n.estado).texto }}</span></td>
+              <td class="num">{{ n.intentos }}</td><td class="nw">{{ cuando(n.programadaPara ?? n.creadoEn) }}</td><td class="nw">{{ n.enviadaEn ? cuando(n.enviadaEn) : '—' }}</td>
+              <td class="wrap err">{{ n.error || '—' }}</td>
+              <td class="nw">
+                @if (puedeReintentar(n)) { <button type="button" class="mini" [disabled]="trabajando() !== null" (click)="reintentar(n)">{{ trabajando() === n.id ? 'Un momento…' : 'Reintentar' }}</button> }
+                @if (errorItem(); as e) { @if (e.id === n.id) { <span class="msg" role="alert">{{ e.texto }}</span> } }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="paginas">
+      <span class="chico suave">{{ d.total }} notificaciones · página {{ pagina() + 1 }} de {{ paginas() }}</span>
+      <div class="acciones">
+        <button type="button" class="mini-b" [disabled]="pagina() === 0" (click)="ir(pagina() - 1)">Anterior</button>
+        <button type="button" class="mini-b" [disabled]="pagina() + 1 >= paginas()" (click)="ir(pagina() + 1)">Siguiente</button>
+      </div>
+    </div>
+  }
+} @else if (!fallo()) { <p class="carga" aria-live="polite">Cargando…</p> }

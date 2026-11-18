@@ -1,0 +1,62 @@
+<header class="cab">
+  <h1>Solicitudes de privacidad</h1>
+  <p class="suave chico">Acceso, rectificación, cancelación y oposición (ARCO). Solo administración.</p>
+</header>
+
+<nav class="tabs" aria-label="Estado de las solicitudes">
+  <a routerLink="/privacidad" [class.on]="!estadoActual()">Todas</a>
+  @for (e of estados; track e.clave) {
+    <a routerLink="/privacidad" [queryParams]="{ estado: e.clave }" [class.on]="estadoActual() === e.clave">{{ e.texto }}s @if (conteos()[e.clave] !== undefined) { <i>{{ conteos()[e.clave] }}</i> }</a>
+  }
+</nav>
+
+@if (aviso(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+
+@if (cargando() && filas().length === 0) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else if (filas().length === 0) {
+  <p class="vacio">No hay solicitudes con este estado.</p>
+} @else {
+  <ul class="lista">
+    @for (s of filas(); track s.id) {
+      <li class="sol" [class.urg]="s.estado === 'recibida'">
+        <div class="meta">
+          <span class="st" [class]="estadoInfo(s.estado).clase">{{ estadoInfo(s.estado).texto }}</span>
+          <span class="tag">{{ tipoTexto(s.tipo) }}</span>
+          @if (s.resueltaEn) { <span class="chico suave">cerrada el {{ fechaHora(s.resueltaEn) }}</span> } @else { <span class="chico suave">hace {{ espera(s) }}</span> }
+        </div>
+        <p class="quien"><b>{{ s.correoUsuario }}</b></p>
+        @if (s.detalle) { <p class="txt">{{ s.detalle }}</p> } @else { <p class="txt suave">Sin detalle.</p> }
+        @if (transiciones(s).length) {
+          <div class="acciones">
+            @for (t of transiciones(s); track t.estado) {
+              <button type="button" class="mini-b" [class.ok]="t.estilo === 'primaria'" [class.mal]="t.estilo === 'peligro'" [disabled]="trabajando() !== null" (click)="elegir(s, t)">{{ t.texto }}</button>
+            }
+          </div>
+        }
+        @if (confirmando(); as c) {
+          @if (c.id === s.id) {
+            <div class="confirma">
+              <p class="chico">{{ c.t.estado === 'rechazada' ? 'Vas a rechazar esta solicitud.' : 'Vas a marcar esta solicitud como resuelta.' }} Una solicitud cerrada <b>ya no se puede reabrir</b>.</p>
+              <div class="acciones">
+                <button type="button" class="mini-b mal" [disabled]="trabajando() !== null" (click)="cambiar(s, c.t.estado)">{{ trabajando() === s.id ? 'Un momento…' : 'Sí, continuar' }}</button>
+                <button type="button" class="mini-b" (click)="confirmando.set(null)">No</button>
+              </div>
+            </div>
+          }
+        }
+        @if (errorItem(); as e) { @if (e.id === s.id) { <p class="aviso" role="alert">{{ e.texto }}</p> } }
+      </li>
+    }
+  </ul>
+  <div class="paginas">
+    <span class="chico suave">Mostrando {{ desde() }}–{{ hasta() }} de {{ total() }}</span>
+    <div class="acciones">
+      <a class="mini-b enlace-b" [class.inactivo]="!hayAnterior()" routerLink="/privacidad" [queryParams]="consulta({ pagina: nPagina() > 1 ? '' + nPagina() : null })">← Anterior</a>
+      <a class="mini-b enlace-b" [class.inactivo]="!haySiguiente()" routerLink="/privacidad" [queryParams]="consulta({ pagina: '' + (nPagina() + 2) })">Siguiente →</a>
+    </div>
+  </div>
+}
+<p class="nota">Cambiar el estado solo registra el avance y la fecha de cierre. <b>No exporta ni borra datos</b>: eso se hace aparte, hasta que exista en la API.</p>

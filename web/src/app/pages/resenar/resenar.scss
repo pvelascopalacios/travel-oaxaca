@@ -1,0 +1,160 @@
+:host {
+  display: block;
+}
+
+.pagina {
+  display: grid;
+  gap: 14px;
+  padding-block: 24px 72px;
+}
+
+.migas a {
+  color: var(--tinta-suave);
+  font-size: 0.9rem;
+}
+
+.tarjeta {
+  display: grid;
+  gap: 16px;
+  width: min(100%, 620px);
+  padding: 26px 24px;
+  border-radius: var(--radio);
+  background: var(--papel);
+  box-shadow: var(--sombra);
+
+  h1 {
+    margin: 0;
+    font: 800 1.7rem var(--fuente-titulo);
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.suave {
+  color: var(--tinta-suave);
+}
+
+.estado {
+  font-size: 0.88rem;
+}
+
+.formulario {
+  display: grid;
+  gap: 16px;
+}
+
+label,
+fieldset {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+legend {
+  padding: 0;
+  margin-bottom: 4px;
+}
+
+input[type='text'],
+input[type='date'],
+textarea {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--linea);
+  border-radius: 12px;
+  background: var(--fondo);
+  color: var(--tinta);
+  font: 400 1rem var(--fuente);
+}
+
+textarea {
+  min-height: 130px;
+  resize: vertical;
+}
+
+.error input,
+.error textarea {
+  border-color: var(--grana);
+}
+
+.contador {
+  text-align: right;
+  color: var(--tinta-suave);
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+
+.msg {
+  color: var(--grana);
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.estrellas {
+  display: flex;
+  gap: 2px;
+
+  button {
+    width: var(--toque);
+    height: var(--toque);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--linea);
+    font-size: 1.9rem;
+    cursor: pointer;
+  }
+
+  button.on {
+    color: var(--ocre);
+  }
+}
+
+.aviso {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fdf0f4;
+  font-size: 0.9rem;
+
+  &.ok {
+    background: rgb(65 105 47 / 12%);
+    color: var(--sierra);
+  }
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.borrar {
+  display: grid;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--linea);
+}
+
+.enlace {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--grana);
+  font: 600 0.9rem var(--fuente);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+button[disabled] {
+  opacity: 0.6;
+  cursor: progress;
+}

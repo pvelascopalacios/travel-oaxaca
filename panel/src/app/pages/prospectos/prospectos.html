@@ -1,0 +1,156 @@
+<header class="cab fila-cab">
+  <div>
+    <h1>Prospectos</h1>
+    <p class="suave chico">El embudo de ventas: de «nuevo» a negocio. Lo más urgente va primero.</p>
+  </div>
+  <div class="acciones">
+    <div class="vista" role="group" aria-label="Vista">
+      <button type="button" [class.on]="vista() === 'lista'" [attr.aria-pressed]="vista() === 'lista'" (click)="cambiarVista('lista')">Lista</button>
+      <button type="button" [class.on]="vista() === 'tablero'" [attr.aria-pressed]="vista() === 'tablero'" (click)="cambiarVista('tablero')">Tablero</button>
+    </div>
+    <a class="mini-b ok enlace-b" routerLink="/prospectos/nuevo">+ Nuevo prospecto</a>
+  </div>
+</header>
+
+<div class="embudo-fila">
+  <div class="tarjeta embudo" role="group" aria-label="Embudo">
+    @for (e of etapas; track e.clave) {
+      <button type="button" class="etapa" [class]="'etapa ' + e.clase" [class.on]="estado() === e.clave" [attr.aria-pressed]="estado() === e.clave" (click)="porEstado(e.clave)"><b>{{ cuenta(e.clave) ?? '–' }}</b><span>{{ e.texto }}</span></button>
+    }
+  </div>
+  <div class="atencion">
+    <button type="button" class="chip-k alerta" [class.on]="!!vencidas()" [attr.aria-pressed]="!!vencidas()" (click)="alternar('vencidas')"><b>{{ resumen()?.vencidas ?? '–' }}</b> Acciones vencidas</button>
+    <button type="button" class="chip-k" [class.on]="!!sinAsignar()" [attr.aria-pressed]="!!sinAsignar()" (click)="alternar('sinAsignar')"><b>{{ resumen()?.sinAsignar ?? '–' }}</b> Sin asignar</button>
+  </div>
+  <div class="tarjeta cifra"><span>Convertidos este mes</span><b>{{ resumen()?.convertidosMes ?? '–' }}</b></div>
+  <button type="button" class="tarjeta cifra boton" [class.on]="estado() === 'descartado'" [attr.aria-pressed]="estado() === 'descartado'" (click)="porEstado('descartado')"><span>Descartados</span><b>{{ cuenta('descartado') ?? '–' }}</b></button>
+</div>
+
+<div class="filtros">
+  <label class="q">Buscar
+    <input type="search" name="q" placeholder="Negocio, contacto, teléfono o correo…" autocomplete="off" [ngModel]="textoBusqueda()" (ngModelChange)="buscar($event)" />
+  </label>
+  <label>Origen
+    <select name="origen" [ngModel]="origen() ?? ''" (ngModelChange)="navegar({ origen: $event || null })">
+      <option value="">Todos los orígenes</option>
+      @for (o of origenes; track o.clave) { <option [value]="o.clave">{{ o.texto }}</option> }
+    </select>
+  </label>
+  <label>Responsable
+    <select name="asignadoA" [ngModel]="asignadoA() ?? ''" (ngModelChange)="navegar({ asignadoA: $event || null })">
+      <option value="">Cualquiera</option>
+      @for (p of equipo(); track p.id) { <option [value]="p.id">{{ p.nombre }}</option> }
+    </select>
+  </label>
+  <label>Categoría
+    <select name="categoriaId" [ngModel]="categoriaId() ?? ''" (ngModelChange)="navegar({ categoriaId: $event || null })">
+      <option value="">Todas</option>
+      @for (c of categorias(); track c.id) { <option [value]="c.id">{{ c.etiqueta }}</option> }
+    </select>
+  </label>
+  <div class="mun"><app-selector-municipio titulo="Municipio" [valor]="municipioId() || null" (cambio)="elegirMunicipio($event)" /></div>
+  @if (hayFiltros()) { <button type="button" class="mini-b" (click)="limpiar()">Quitar filtros</button> }
+</div>
+
+@if (vista() === 'tablero') {
+  @if (errorMover(); as m) { <p class="aviso" role="alert">{{ m }}</p> }
+  <div class="tablero">
+    @for (c of columnas; track c.clave) {
+      <section class="col" [class.sobre]="sobre() === c.clave" [attr.aria-label]="c.texto" (dragover)="sobreColumna($event, c.clave)" (dragleave)="sobre.set(null)" (drop)="soltar($event, c.clave)">
+        <div class="ch"><span class="st" [class]="c.clase">{{ c.texto }}</span><b>{{ col(c.clave).total }}</b></div>
+        @if (col(c.clave).fallo) {
+          <p class="aviso" role="alert">No pudimos cargar esta etapa. <button type="button" class="enlace" (click)="cargarColumna(c.clave, 0)">Reintentar</button></p>
+        } @else if (col(c.clave).cargando && col(c.clave).items.length === 0) {
+          <p class="carga">Cargando…</p>
+        } @else if (col(c.clave).items.length === 0) {
+          <p class="vacio-col">Sin prospectos en esta etapa.</p>
+        }
+        @for (p of col(c.clave).items; track p.id) {
+          <article class="pc" [class.venc]="p.vencida" [class.ocupada]="moviendo() === p.id" draggable="true" (dragstart)="arrastrar($event, p)" (dragend)="arrastrando.set(null); sobre.set(null)">
+            <a class="nombre-p" [routerLink]="['/prospectos', p.id]">{{ p.nombreNegocio }}</a>
+            <span class="chico suave">@if (p.categoriaClave) { {{ p.categoriaClave.replaceAll('_', ' ') }} }@if (p.municipioNombre) { · {{ p.municipioNombre }} }</span>
+            @if (p.contactoNombre || p.telefono) { <span class="chico suave">{{ p.contactoNombre }}@if (p.telefono) { · {{ p.telefono }} }</span> }
+            <span class="meta">
+              @if (p.origen) { <span class="tag">{{ origenTexto(p.origen) }}</span> }
+              @if (p.asignadoNombre) { <span class="chico suave">{{ p.asignadoNombre }}</span> } @else { <span class="st gris">Sin asignar</span> }
+            </span>
+            @if (p.vencida) { <span class="st urg">Acción vencida</span> }
+            @else if (p.proximaAccionEn) { <span class="chico suave">Próxima acción: {{ fecha(p.proximaAccionEn) }}</span> }
+            <label class="mover">Mover a
+              <select [attr.aria-label]="'Mover ' + p.nombreNegocio + ' a otra etapa'" [disabled]="!!moviendo()" (change)="mover(p, $any($event.target).value); $any($event.target).value = ''">
+                <option value="">…</option>
+                @for (o of columnas; track o.clave) { @if (o.clave !== p.estado) { <option [value]="o.clave">{{ o.texto }}</option> } }
+              </select>
+            </label>
+          </article>
+        }
+        @if (hayMas(c.clave)) {
+          <button type="button" class="mini-b" [disabled]="col(c.clave).cargando" (click)="cargarColumna(c.clave, col(c.clave).pagina + 1)">Ver más ({{ col(c.clave).total - col(c.clave).items.length }})</button>
+        }
+      </section>
+    }
+  </div>
+  <p class="chico suave">Arrastra una tarjeta a otra columna o usa «Mover a». Convertido y descartado se manejan desde la lista y la ficha del prospecto.</p>
+} @else if (cargando() && filas().length === 0) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else if (filas().length === 0) {
+  @if (hayFiltros()) {
+    <app-vacio tipo="filtro" icono="filtro" titulo="No hay prospectos con estos filtros">
+      <p>Prueba quitando algún filtro, o empieza de nuevo.</p>
+      <div class="vacio-e-bs"><button type="button" class="vb p" (click)="limpiar()">Quitar todos los filtros</button></div>
+    </app-vacio>
+  } @else {
+    <app-vacio tipo="nuevo" icono="plus" titulo="Aún no hay prospectos">
+      <p>Aquí aparecen los negocios que quieres convencer de unirse. Empieza con uno o carga varios a la vez.</p>
+      <div class="vacio-e-bs"><a class="vb p" routerLink="/prospectos/nuevo">Crear el primero</a><a class="vb" routerLink="/importaciones">Importar un CSV</a></div>
+    </app-vacio>
+  }
+} @else {
+  <div class="tarjeta tabla-p">
+    <div class="cab-t" aria-hidden="true"><span></span><span>Negocio</span><span>Etapa y origen</span><span>Contacto</span><span>Responsable</span><span>Próxima acción</span><span></span></div>
+    <ul class="lista">
+      @for (p of filas(); track p.id) {
+        <li class="pros" [class.venc]="p.vencida">
+          <span class="av" aria-hidden="true" [style.background]="colorAvatar(p.nombreNegocio).fondo" [style.color]="colorAvatar(p.nombreNegocio).tinta">{{ iniciales(p.nombreNegocio) }}</span>
+          <div class="c-neg">
+            <h3><a [routerLink]="['/prospectos', p.id]">{{ p.nombreNegocio }}</a></h3>
+            <p class="chico suave">@if (p.categoriaClave) { {{ p.categoriaClave.replaceAll('_', ' ') }} }@if (p.categoriaClave && p.municipioNombre) { · }@if (p.municipioNombre) { {{ p.municipioNombre }} }</p>
+          </div>
+          <div class="c-eta">
+            <span class="st" [class]="estadoInfo(p.estado).clase">{{ estadoInfo(p.estado).texto }}</span>
+            @if (p.origen) { <span class="chico suave">{{ origenTexto(p.origen) }}</span> }
+          </div>
+          <div class="c-con">
+            @if (p.contactoNombre) { <span>{{ p.contactoNombre }}</span> }
+            @if (p.telefono) { <span class="chico suave">{{ p.telefono }}</span> }
+            @if (!p.contactoNombre && !p.telefono) { <span class="chico suave">—</span> }
+          </div>
+          <div class="c-res">
+            @if (p.asignadoNombre) { <span class="av-p" aria-hidden="true">{{ iniciales(p.asignadoNombre) }}</span><span>{{ p.asignadoNombre }}</span> }
+            @else if (p.estado !== 'convertido' && p.estado !== 'descartado') { <span class="st gris">Sin asignar</span> }
+            @else { <span class="chico suave">—</span> }
+          </div>
+          <div class="c-pro">
+            @if (p.vencida) { <span class="st urg">Venció {{ p.proximaAccionEn ? fecha(p.proximaAccionEn) : '' }}</span> }
+            @else if (p.proximaAccionEn) { <span class="chico">{{ fecha(p.proximaAccionEn) }}</span> }
+            @else { <span class="chico suave">—</span> }
+          </div>
+          <div class="c-acc">
+            @if (llamar(p.telefono); as t) { <a class="ib" [href]="t" aria-label="Llamar a {{ p.nombreNegocio }}" title="Llamar">☎</a> }
+            @if (whatsapp(p.telefono); as w) { <a class="ib" [href]="w" target="_blank" rel="noopener" aria-label="WhatsApp a {{ p.nombreNegocio }}" title="WhatsApp">✆</a> }
+            <a class="mini-b enlace-b" [routerLink]="['/prospectos', p.id]">Abrir</a>
+          </div>
+        </li>
+      }
+    </ul>
+  </div>
+  <div class="paginas">
+    <span class="chico suave">Mostrando {{ desde() }}–{{ hasta() }} de {{ total() }}</span>
+    <div class="acciones">
+      <a class="mini-b enlace-b" [class.inactivo]="!hayAnterior()" routerLink="/prospectos" [queryParams]="consulta({ pagina: nPagina() > 1 ? '' + nPagina() : null })">← Anterior</a>
+      <a class="mini-b enlace-b" [class.inactivo]="!haySiguiente()" routerLink="/prospectos" [queryParams]="consulta({ pagina: '' + (nPagina() + 2) })">Siguiente →</a>
+    </div>
+  </div>
+}

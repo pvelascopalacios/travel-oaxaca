@@ -1,0 +1,252 @@
+TRAVEL OAXACA - APP FLUTTER - ENTREGA 6 (Preparacion para iPhone)
+==========================================================================
+Acumulativa: copia lib/, test/ y pubspec.yaml encima de tu proyecto. Funciona igual en Android; no hay paquetes nuevos ni cambios en la API.
+NO SE PROBO EN iPHONE NI SE COMPILO (no tengo Mac aqui): el codigo es seguro en Android, lo de iOS se valida cuando tengas la Mac.
+
+QUE CAMBIA EN EL CODIGO (solo se nota en iPhone)
+- Confirmaciones (cerrar otras sesiones, eliminar lista): dialogo estilo iOS. En Android quedan Material.
+- Fechas (reseña "¿Cuando fuiste?", fechas del itinerario): ruleta de iOS desde abajo. En Android, el calendario de siempre.
+- Interruptores (privacidad, formulario de lista): estilo iOS en iPhone.
+- Direccion de la API: en iPhone/simulador usa http://localhost:8081/api/v1 por defecto (en Android sigue 10.0.2.2).
+  Para un iPhone fisico: --dart-define=API_URL=http://IP-DE-TU-MAC:8081/api/v1
+- Todo lo demas (colores, tipografia, tarjetas, botones) se ve igual en las dos plataformas, a proposito.
+
+LO QUE HAY QUE HACER EN LA MAC (una sola vez)
+1. Instala Xcode (App Store) y ejecuta: sudo xcode-select --switch /Applications/Xcode.app && sudo xcodebuild -runFirstLaunch
+2. Instala CocoaPods: brew install cocoapods   (o sudo gem install cocoapods)
+3. Copia el proyecto a la Mac, entra a la carpeta y corre: flutter pub get && cd ios && pod install && cd ..
+4. Abre ios/Runner/Info.plist y agrega DENTRO de <dict> (esto NO esta en el zip porque la carpeta ios/ es tuya):
+     <key>NSLocationWhenInUseUsageDescription</key>
+     <string>Usamos tu ubicacion para mostrarte lo que hay cerca de ti.</string>
+     <key>NSAppTransportSecurity</key>
+     <dict><key>NSAllowsLocalNetworking</key><true/></dict>
+   El primero es obligatorio para "Cerca de mi" (sin el, la app se cierra al pedir ubicacion).
+   El segundo permite http a localhost/red local durante el desarrollo; en produccion la API debe ser https.
+5. Arranca la API en la Mac (o dejala corriendo en tu PC y usa su IP en API_URL).
+6. Simulador: open -a Simulator, luego: flutter run -d "iPhone"   (no necesita cuenta de Apple).
+   En el simulador pon la ubicacion: Features > Location > Custom Location (Oaxaca: 17.0654, -96.7236).
+7. iPhone fisico: necesita una cuenta de Apple (gratis sirve para pruebas) y elegir tu "Team" en Xcode > Runner > Signing.
+   Para subir a la App Store si se necesita la cuenta de desarrollador de pago.
+
+QUE PROBAR EN EL SIMULADOR
+1. Deslizar desde el borde izquierdo regresa a la pantalla anterior.
+2. Perfil > Sesiones > "Cerrar las demas": dialogo de iOS. Eliminar una lista: igual.
+3. Reseña > fecha de visita y fechas de un itinerario: ruleta con Cancelar / Listo.
+4. Cerca de mi: sale el permiso de ubicacion con tu texto; con la ubicacion personalizada aparecen negocios.
+5. Revisa que nada quede tapado por la barra inferior ni por la isla/notch.
+Pasame capturas o lo que se vea raro y lo ajustamos.
+
+--------------------------------------------------------------------------
+(Lo de entregas anteriores sigue valiendo:)
+
+TRAVEL OAXACA - APP FLUTTER - ENTREGA 5 (Rutas + Listas e Itinerarios)
+==========================================================================
+Acumulativa: copia lib/, test/ y pubspec.yaml encima de tu proyecto. No hay paquetes nuevos ni cambios en la API.
+
+NUEVO (segun los mockups "Rutas y Listas" aprobados)
+- Rutas: pantalla /rutas con filtros de dificultad y transporte, tarjetas con portada de color, insignia "Premium",
+  corazon y datos (duracion, km, dificultad, transporte). Paginada (carga mas al llegar abajo).
+  En Explorar aparece la seccion "Rutas" (solo si hay rutas publicadas).
+- Detalle de ruta: encabezado, estadisticas, mapa con paradas numeradas y linea del recorrido (© OpenStreetMap),
+  lista de paradas (tocar una de lugar o negocio abre su ficha), "Como llegar" a la primera parada con coordenadas
+  y "＋ Agregar a mi itinerario". Las rutas guardadas en Favoritos ya abren (antes decia "llegan pronto").
+- Guardar en…: boton de marcador junto al corazon en negocio, lugar y ruta. Elige lista o itinerario (y el dia),
+  o crea uno nuevo ahi mismo. Sin cuenta te manda a Ingresar. Si ya estaba, avisa "Ese elemento ya esta en la lista".
+- Mis listas (Perfil > Mis listas e itinerarios, o /listas): Itinerarios y Listas, crear con "＋", estado vacio.
+  Formulario: nombre (max 80), interruptor "Es un itinerario" (no se cambia al editar), fechas (fin no antes del inicio),
+  "Publica".
+- Lista / itinerario: pestañas por dia, reordenar arrastrando, menu por elemento (nota, mover de dia, quitar),
+  menu ⋯ (editar, eliminar con confirmacion) y "＋ Agregar al dia N" desde tus favoritos o "Buscar mas".
+  Itinerarios sin fechas tienen boton "＋ Dia" para agregar dias.
+
+NOTAS HONESTAS
+- "Premium" hoy solo es una insignia: no bloquea nada. Dime que debe significar.
+- Las listas publicas no tienen "Compartir" todavia (falta decidir la direccion del sitio).
+- No se sabe de antemano en que listas ya esta un elemento (la API no lo da sin abrir cada lista), asi que no hay palomitas
+  previas: si repites, avisa que ya estaba.
+- Reordenar manda un cambio por elemento movido; si falla uno, se vuelve a leer la lista.
+- Las rutas no traen foto: la portada es de color con el icono del transporte.
+- NO SE COMPILO AQUI. Si algo no compila, pegame el primer error.
+
+QUE PROBAR
+1. Explorar > Rutas > "Ver todo": filtra por dificultad y transporte; abre una ruta con paradas con coordenadas: mapa con numeros.
+2. En una ficha de negocio toca el marcador: sin cuenta va a Ingresar; con cuenta crea "Fin de semana" (itinerario, con fechas) y guarda en el dia 2.
+3. Perfil > Mis listas e itinerarios: aparece; abrelo, cambia de dia, arrastra para reordenar, agrega nota, mueve de dia, quita.
+4. Agregar al dia N desde favoritos; repite el mismo para ver el aviso de duplicado.
+5. Fechas: fin antes del inicio marca error. Editar nombre; Eliminar pide confirmacion.
+6. Favoritos > una ruta: abre su detalle.
+
+--------------------------------------------------------------------------
+(Lo de entregas anteriores sigue valiendo:)
+
+TRAVEL OAXACA - APP FLUTTER - ENTREGA 4c (Perfil completo)
+==========================================================================
+Acumulativa: copia lib/, test/ y pubspec.yaml encima de tu proyecto. No hay paquetes nuevos ni cambios en la API.
+Cierra la entrega 4 (Cerca, Resenas y Perfil).
+
+NUEVO (segun los mockups "Perfil v2" aprobados)
+- Perfil: avatar, aviso "Confirma tu correo" con Reenviar (solo si falta), Mi actividad (reseñas y favoritos con conteo),
+  Cuenta, Privacidad y ayuda, Cerrar sesion. Al abrirlo (o deslizar hacia abajo) vuelve a leer tu perfil: si confirmaste
+  el correo desde otro lado, el aviso desaparece. Tambien se relee al tocar "Escribir reseña" antes de avisar.
+- Datos personales: nombre, telefono (10 digitos, se guarda como +52...) e idioma. El correo se ve pero no se cambia.
+- Contraseña: actual, nueva (minimo 10 caracteres, como exige la API), medidor de fuerza y confirmacion. La API cierra tus
+  OTRAS sesiones al cambiarla; esta sigue abierta.
+- Sesiones abiertas: dispositivos con su plataforma y version, "Cerrar" por cada uno y "Cerrar sesion en los demas".
+  (La API tiene "cerrar todas", pero cerraria tambien esta; por eso se cierran una por una las otras.)
+- Mis datos y privacidad: preferencias (estadisticas y novedades, se guardan al instante), lo que aceptaste (version y fecha)
+  y los 4 derechos (acceso, rectificacion, cancelacion, oposicion) con su estado: Recibida / En tramite / Resuelta / No procedio.
+  Si ya hay una solicitud abierta del mismo tipo, la API avisa y no deja duplicarla.
+
+TEXTOS LEGALES (necesito tu decision)
+La API guarda que version aceptaste, pero no el texto. La app abre una pagina web. Las direcciones se pasan al compilar:
+  flutter run --dart-define=URL_TERMINOS=https://TU-SITIO/terminos --dart-define=URL_PRIVACIDAD=https://TU-SITIO/privacidad
+Sin ellas, tocar el texto avisa "estara disponible cuando publiquemos el sitio".
+
+NOTAS HONESTAS
+- El idioma guarda tu preferencia en la cuenta; la app todavia se ve solo en español (falta traducirla).
+- "Borrar mi cuenta" envia una solicitud de cancelacion que el equipo atiende; no borra la cuenta al instante.
+- NO SE COMPILO AQUI. Si algo no compila, pegame el primer error.
+
+QUE PROBAR
+1. Perfil: ves tus conteos. Con un usuario sin correo confirmado sale el aviso; "Reenviar" manda el correo.
+   Confirma el correo desde el enlace y desliza el perfil hacia abajo: el aviso desaparece.
+2. Datos personales: cambia el nombre y el telefono, guarda; el Perfil muestra el nombre nuevo. Un telefono de 5 digitos marca error.
+3. Contraseña: con la actual mal, el error sale en el campo. Con una de 9 caracteres el boton esta apagado.
+4. Sesiones: inicia sesion tambien en el navegador (portal) o en otro emulador; aparece y puedes cerrarla.
+5. Privacidad: activa y desactiva las preferencias, sal y vuelve a entrar: se conservan.
+6. Solicita "Saber qué datos tenemos": aparece "Tu solicitud: Recibida". Pedirla otra vez muestra el aviso de la API.
+
+--------------------------------------------------------------------------
+(Lo de entregas anteriores sigue valiendo:)
+
+TRAVEL OAXACA - APP FLUTTER - ENTREGA 4b (Resenas) + 1 CAMBIO EN LA API
+==========================================================================
+Acumulativa: copia lib/, test/ y pubspec.yaml encima de tu proyecto (flutter pub get no cambia nada nuevo).
+
+IMPORTANTE: HAY UN CAMBIO EN LA API (carpeta api/ del zip)
+La API no tenia forma de listar "mis resenas" (solo existia GET /mi/negocios/{id}/resena, una por una).
+Agregue GET /api/v1/mi/resenas. Copia estos 4 archivos a travel-oaxaca-api (mismas rutas) y reinicia la API:
+  src/main/java/mx/com/traveloaxaca/comunidad/dto/ComunidadDtos.java      (nuevo record MiResenaDto)
+  src/main/java/mx/com/traveloaxaca/comunidad/repo/ResenaRepositorio.java (deUsuarioTodas, negociosDeResenas)
+  src/main/java/mx/com/traveloaxaca/comunidad/servicio/ResenaServicio.java (mias)
+  src/main/java/mx/com/traveloaxaca/comunidad/web/ResenaController.java    (GET /mi/resenas)
+Sin ese cambio, "Mis reseñas" muestra error; escribir/editar/eliminar desde la ficha funciona igual.
+OJO: estos archivos de la API NO se compilaron aqui (no hay dependencias de Spring en mi entorno). Si mvn marca error, pegamelo.
+
+NUEVO EN LA APP
+- Ficha del negocio > "Escribir resena": sin cuenta te manda a Ingresar; sin correo confirmado avisa (la API lo exige);
+  si ya reseñaste ese negocio abre tu resena para editarla (la API permite una por negocio).
+- Pantalla Tu resena: 5 estrellas con etiqueta (Malo..Excelente), titulo (max 80, opcional), texto (20 a 2000 caracteres),
+  fecha de visita (este mes, el anterior u "Otra fecha"), aviso de como se publica tu nombre ("Prudens V.").
+  Los errores de la API salen junto al campo o en un aviso rojo.
+- La API decide si se publica al instante o queda "en revision" (filtro de lenguaje): el mensaje de gracias lo dice.
+- Editar: dentro de los dias que permita la API (30 por defecto); pasado el plazo muestra su mensaje.
+- Eliminar: hoja de confirmacion (desde la pantalla de editar o desde Mis resenas).
+- Perfil > Mis reseñas: total y promedio, tarjetas con menu (Editar / Eliminar), etiqueta "En revision" o "No se publico",
+  estado vacio con boton hacia Explorar. Tocar la tarjeta abre el negocio.
+
+CAMBIO RESPECTO AL MOCKUP
+- El limite del texto es 2000 caracteres (la API), no 1000.
+- La fecha de visita elige un mes (guarda el dia 1) u otra fecha exacta con calendario.
+
+TODAVIA NO
+- Fotos en las resenas (la API las soporta; falta la subida desde la app).
+- "Util" y respuestas del negocio se ven en la ficha, pero no se pueden dar desde la app.
+- El resto del Perfil (idioma, verificar correo, cambiar contraseña, cerrar sesion en todos, textos legales): entrega 4c.
+- NO SE COMPILO AQUI. Si algo no compila, pegame el primer error.
+
+QUE PROBAR (API con tu usuario CON correo confirmado)
+1. Abre un negocio > Reseñas > Escribir reseña. Sin estrellas ni 20 caracteres el boton esta apagado.
+2. Publica una: aparece el mensaje de gracias y la resena sale en la ficha (si no, "en revision").
+3. Vuelve a tocar Escribir reseña en ese negocio: abre la tuya para editarla. Cambia estrellas y guarda.
+4. Perfil > Mis reseñas: aparece con su total y promedio. Menu ... > Editar / Eliminar.
+5. Elimina: confirma en la hoja; desaparece y la ficha actualiza el promedio.
+6. Con un usuario sin correo confirmado: avisa al tocar Escribir reseña.
+7. Una palabra que tu filtro de lenguaje detecte deberia dejarla "En revision".
+
+--------------------------------------------------------------------------
+(Lo de entregas anteriores sigue valiendo:)
+
+TRAVEL OAXACA - APP FLUTTER - ENTREGA 4a (Cerca de mi con mapa OpenStreetMap)
+==========================================================================
+Acumulativa: copia lib/, test/ y pubspec.yaml encima de tu proyecto y corre:  flutter pub get
+(paquetes nuevos: flutter_map, latlong2, geolocator).
+
+PASO OBLIGATORIO EN ANDROID (permiso de ubicacion)
+En android/app/src/main/AndroidManifest.xml, junto al permiso INTERNET que ya pusiste, agrega:
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+Despues cierra la app y corre de nuevo (flutter run); un hot reload no basta para cambiar el manifiesto.
+
+UBICACION EN EL EMULADOR
+El emulador cree que estas en California. En el emulador: boton "..." (Extended controls) > Location,
+escribe Latitud 17.0732 y Longitud -96.7266 (centro de Oaxaca) y pulsa "Set location".
+
+NUEVO: PESTANA CERCA (segun los mockups "Cerca de mi v2" aprobados)
+- Pantalla de permiso: explica para que se usa la ubicacion. "Activar ubicacion" pide el permiso;
+  "Ahora no" abre el mapa centrado en Oaxaca. Si se bloqueo el permiso, ofrece abrir Ajustes.
+- Mapa de OpenStreetMap con pines por categoria (icono y color), tu punto azul y boton de centrar.
+- Chips: Todo, las 4 categorias con mas negocios y "Abierto ahora". Boton de filtros: distancia (1 a 50 km).
+- Al mover el mapa aparece "Buscar en esta zona", que busca alli con el radio visible.
+- Tocar un pin abre la tarjeta (foto, calificacion, abierto, precio, distancia, corazon, Ver ficha, como llegar).
+- Lista que se arrastra desde abajo: "Cerca de ti, N negocios en X km, del mas cercano", con distancia y minutos a pie.
+- La API recibe lat, lng, radioKm y orden=distancia (maximo 50 negocios por consulta).
+
+NOTAS HONESTAS
+- NO SE COMPILO AQUI. Si algo no compila, pegame el primer error.
+- Los mosaicos de openstreetmap.org son gratis y sin llave, pero su politica de uso es para volumen bajo. Para produccion
+  con muchos usuarios hay que contratar un proveedor de mosaicos (MapTiler, Stadia, etc.) o alojarlos; solo cambia la URL.
+- El mapa pequeno de la ficha del negocio sigue siendo decorativo; falta usar este mismo mapa ahi.
+- "Buscar en esta zona..." de arriba abre la busqueda general; aun no filtra por zona.
+- Las distancias se calculan desde tu ubicacion; sin ubicacion no se muestran.
+
+QUE PROBAR
+1. Abre la pestana Cerca: ves la explicacion. "Ahora no" muestra el mapa de Oaxaca con pines.
+2. Con la ubicacion fijada en Oaxaca, toca "Activar ubicacion", acepta: el mapa se centra en ti (punto azul).
+3. Toca un pin: aparece la tarjeta. "Ver ficha" abre el negocio; el icono de ruta abre Google Maps.
+4. Mueve el mapa lejos: aparece "Buscar en esta zona". Tocalo: cambia la lista.
+5. Arrastra la lista hacia arriba: ves todos con distancia. Toca un chip (p. ej. Comer) y "Abierto ahora".
+6. Filtros > 1 km / 25 km cambia el zoom y los resultados.
+7. Prueba el caso sin permiso: Ajustes de la app > Permisos > Ubicacion > No permitir, reabre la pestana.
+
+--------------------------------------------------------------------------
+(Lo de entregas anteriores sigue valiendo:)
+
+TRAVEL OAXACA - APP FLUTTER - ENTREGA 3 v2 (Ficha, Lugar, Evento, Favoritos y Resultados nuevos)
+==========================================================================
+Acumulativa: copia lib/, test/ y pubspec.yaml encima de tu proyecto y corre:  flutter pub get
+(nuevo paquete: url_launcher).
+
+CAMBIOS DE LA V2 (segun el mockup "Resultados v3" aprobado)
+- Resultados en un solo listado, sin pestanas: Negocios (tarjetas anchas con foto), Lugares (carrusel) y Eventos, cada uno con
+  "Ver todos" que abre su lista completa con paginacion. El boton atras vuelve del listado completo al general.
+- Sin foto, las tarjetas muestran un fondo de color con el icono de su categoria (cama, cubiertos, copa, brujula...) en vez de una letra.
+- "Sin resenas" ya no se repite: los negocios sin calificacion llevan la insignia "Nuevo".
+- Corregido el punto suelto antes del precio. Buscador en pildora blanca sin borde grueso. "Ver en mapa" sobre un degradado.
+- Si vienes de una categoria o region de Explorar, abre directo la lista de negocios filtrada.
+
+NUEVO
+- Ficha del negocio (/negocio/:slug): foto grande con galeria y contador, cabecera que se compacta, datos rapidos
+  (calificacion, abierto/cerrado y hasta que hora, posicion en el municipio), promociones, descripcion con "Leer más",
+  servicios, idiomas, habitaciones/tours/menu/productos (segun el tipo), ubicacion, horario (hoy y la semana), politicas
+  y resenas con promedio y distribucion. Barra fija: precio, WhatsApp, llamar y como llegar (solo los que el negocio tenga).
+- Lugar (/lugar/:slug): fotos, historia, recomendaciones, mejor epoca, como llegar, que ver, negocios cerca y boton Como llegar.
+- Evento (/evento/:slug): cabecera con fecha, descripcion, negocios del evento y Como llegar.
+- Favoritos con cuenta: el corazon de tarjetas, resultados y fichas guarda/quita (PUT/DELETE /mi/favoritos). Sin cuenta lleva
+  a Ingresar y al entrar regresa a donde estabas. Pantalla Favoritos con filtros Todos/Negocios/Lugares/Rutas.
+- Resultados con el estilo nuevo: pestanas subrayadas, conteo y boton "Ver en mapa".
+- WhatsApp abre wa.me con un mensaje listo; Como llegar abre Google Maps con la ruta.
+
+TODAVIA NO
+- Escribir resenas y el resto del Perfil (mis resenas, idioma): entrega 4. El boton "Escribir resena" avisa eso.
+- Las rutas guardadas avisan "llegan pronto" (la pantalla de ruta no esta hecha).
+- El mapa de la ubicacion es un adorno; el mapa real (Cerca de mi) llega en la entrega 4.
+
+NO SE COMPILO AQUI. Si algo no compila, pegame el primer error.
+
+QUE PROBAR (API en :8081 con un negocio publicado, con fotos, contacto y horario)
+1. Toca un negocio en Explorar: abre la ficha. Desliza las fotos. Baja: la cabecera se compacta.
+2. WhatsApp / Llamar / Como llegar abren sus apps (en el emulador, WhatsApp puede abrir el navegador).
+3. Corazon sin sesion: te lleva a Ingresar y regresa. Con sesion: se pinta de grana y aparece en Favoritos.
+4. Cierra y abre la app: el favorito sigue.
+5. Lugares y eventos: abre uno de los resultados y revisa que salga su detalle.

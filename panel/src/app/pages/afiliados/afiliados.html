@@ -1,0 +1,76 @@
+<header class="cab fila-cab">
+  <div>
+    <h1>Enlaces de afiliados</h1>
+    <p class="suave chico">Cada enlace cuenta el clic y lleva al sitio del socio. @if (!esAdmin()) { Solo administración crea y edita enlaces. }</p>
+  </div>
+  @if (esAdmin()) { <button type="button" class="mini-b ok" (click)="nuevo()">+ Nuevo enlace</button> }
+</header>
+
+@if (aviso(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+
+@if (editando(); as ed) {
+  <form class="tarjeta" (ngSubmit)="guardar()" novalidate>
+    <h2>{{ ed === 'nuevo' ? 'Nuevo enlace' : 'Editar enlace' }}</h2>
+    <div class="rejilla">
+      <label [class.error]="errores()['codigo']">Código * <span class="ayuda">(3 a 40: minúsculas, números, guiones)</span>
+        <input name="codigo" autocomplete="off" maxlength="45" [(ngModel)]="form.codigo" />@if (errores()['codigo']; as m) { <span class="msg">{{ m }}</span> }
+      </label>
+      <label [class.error]="errores()['socio']">Socio * <input name="socio" maxlength="170" [(ngModel)]="form.socio" />@if (errores()['socio']; as m) { <span class="msg">{{ m }}</span> }</label>
+    </div>
+    <label [class.error]="errores()['destinoUrl']">Dirección de destino * <input name="destinoUrl" type="url" inputmode="url" [(ngModel)]="form.destinoUrl" />@if (errores()['destinoUrl']; as m) { <span class="msg">{{ m }}</span> }</label>
+    <div class="rejilla">
+      <label [class.error]="errores()['comisionPct']">Comisión % <span class="ayuda">(0 a 100)</span><input name="comisionPct" inputmode="decimal" [(ngModel)]="form.comisionPct" />@if (errores()['comisionPct']; as m) { <span class="msg">{{ m }}</span> }</label>
+      <label>Estado <select name="estado" [(ngModel)]="form.estado">@for (e of estados; track e.clave) { <option [value]="e.clave">{{ e.texto }}</option> }</select></label>
+    </div>
+    <app-selector-negocio titulo="Negocio relacionado (opcional)" [elegido]="negocioElegido()" [error]="errores()['negocioId'] ?? null" (cambio)="elegirNegocio($event)" />
+    @if (errorApi(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+    <div class="barra-guardar">
+      <button type="submit" class="mini-b ok" [disabled]="trabajando()">{{ trabajando() ? 'Guardando…' : 'Guardar enlace' }}</button>
+      <button type="button" class="mini-b" [disabled]="trabajando()" (click)="cancelar()">Cancelar</button>
+    </div>
+    <p class="nota">Los enlaces no se borran: se pausan (un enlace pausado responde «no existe»).</p>
+  </form>
+}
+
+@if (lista() === null && !fallo()) { <p class="carga" aria-live="polite">Cargando…</p> }
+@else if (fallo(); as f) { <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p> }
+@else if (lista()!.length === 0) { <p class="vacio">Aún no hay enlaces de afiliados.</p> }
+@else {
+  <div class="tarjeta tabla">
+    <table>
+      <thead><tr><th>Código</th><th>Socio</th><th>Destino</th><th class="num">Comisión</th><th>Estado</th><th class="num">Clics (30 d)</th><th></th></tr></thead>
+      <tbody>
+        @for (a of lista(); track a.id) {
+          <tr>
+            <td><b>{{ a.codigo }}</b><br><span class="chico suave">/r/{{ a.codigo }}</span></td>
+            <td class="wrap">{{ a.socio }}</td>
+            <td class="wrap"><a [href]="a.destinoUrl" target="_blank" rel="noopener noreferrer">{{ a.destinoUrl }}</a></td>
+            <td class="num">{{ a.comisionPct === null ? '—' : a.comisionPct + ' %' }}</td>
+            <td><span class="st" [class]="estadoInfo(a.estado).clase">{{ estadoInfo(a.estado).texto }}</span></td>
+            <td class="num">{{ a.clics30d }}</td>
+            <td class="nw"><button type="button" class="mini" (click)="abrirClics(a)">{{ verClics()?.id === a.id ? 'Cerrar' : 'Ver clics' }}</button>@if (esAdmin()) { <button type="button" class="mini" (click)="editar(a)">Editar</button> }</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (verClics(); as a) {
+  <div class="tarjeta">
+    <div class="fila-cab"><h2>Clics por día · {{ a.codigo }}</h2>
+      <div class="filtros-f">
+        <label>Desde <input type="date" name="desde" [(ngModel)]="desde" (change)="cargarClics()" /></label>
+        <label>Hasta <input type="date" name="hasta" [(ngModel)]="hasta" (change)="cargarClics()" /></label>
+      </div>
+    </div>
+    @if (errorClics(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+    @if (cargandoClics()) { <p class="carga">Cargando…</p> }
+    @else {
+      <div class="barras" role="img" [attr.aria-label]="'Clics por día: ' + resumen().total + ' en el periodo'">
+        @for (d of dias(); track d.dia) { <i [style.height.%]="altura(d.clics)" [title]="d.dia + ': ' + d.clics + ' clics'"></i> }
+      </div>
+      <p class="chico suave">Total del periodo: <b>{{ resumen().total }}</b> clics@if (resumen().diaMaximo) { · día más fuerte: {{ resumen().maximo }} ({{ resumen().diaMaximo }}) }</p>
+    }
+  </div>
+}

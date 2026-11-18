@@ -1,0 +1,74 @@
+<a class="volver" routerLink="/eventos">← Volver a eventos</a>
+
+@if (cargando()) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }}</p>
+} @else {
+  <header class="cab fila-cab">
+    <h1>{{ nuevo() ? 'Nuevo evento' : nombre() || 'Editar evento' }}</h1>
+    @if (!nuevo()) { <span class="st" [class]="estadoInfo(form.estado).clase">{{ estadoInfo(form.estado).texto }}</span> }
+  </header>
+  @if (aviso(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+
+  <form class="tarjeta" (ngSubmit)="guardar()" novalidate>
+    <div class="rejilla">
+      <label [class.error]="errores()['fechaInicio']">Empieza *<input type="date" name="fechaInicio" [(ngModel)]="form.fechaInicio" />@if (errores()['fechaInicio']; as m) { <span class="msg">{{ m }}</span> }</label>
+      <label [class.error]="errores()['fechaFin']">Termina *<input type="date" name="fechaFin" [(ngModel)]="form.fechaFin" />@if (errores()['fechaFin']; as m) { <span class="msg">{{ m }}</span> }</label>
+      <app-selector-municipio titulo="Municipio" [valor]="form.municipioId" [error]="errores()['municipioId'] ?? null" (cambio)="elegirMunicipio($event)" />
+      <label>Estado *<select name="estado" [(ngModel)]="form.estado">@for (e of estados; track e.clave) { <option [value]="e.clave">{{ e.texto }}</option> }</select></label>
+    </div>
+
+    <p class="sub">Ubicación (opcional)</p>
+    <app-selector-mapa [latitud]="form.latitud" [longitud]="form.longitud" [centroLat]="centro().lat" [centroLng]="centro().lng" (elegido)="marcarPunto($event)" />
+    <div class="acciones">
+      <span class="chico suave">{{ form.latitud !== null ? 'Latitud ' + form.latitud + ' · Longitud ' + form.longitud : 'Toca el mapa para marcar el punto.' }}</span>
+      @if (form.latitud !== null) { <button type="button" class="mini" (click)="quitarPunto()">Quitar punto</button> }
+    </div>
+    @if (errores()['latitud']; as m) { <p class="aviso" role="alert">{{ m }}</p> }
+
+    <p class="sub">Textos por idioma</p>
+    <app-idiomas-pestanas [idiomas]="cat.idiomasOrdenados()" [activo]="idioma()" [conTexto]="conTexto()" [errores]="idiomasConError()" (cambio)="idioma.set($event)" />
+    @if (errores()['texto-' + idioma()]; as m) { <p class="aviso" role="alert">{{ m }}</p> }
+    <label [class.error]="(idioma() === 'es' && errores()['nombre']) || errores()['nombre-' + idioma()]">Nombre{{ idioma() === 'es' ? ' *' : '' }} <span class="ayuda">(hasta 200)</span>
+      <input name="nombre" maxlength="210" [(ngModel)]="textoActual().nombre" (ngModelChange)="cambio()" />
+      @if (idioma() === 'es' && errores()['nombre']; as m) { <span class="msg">{{ m }}</span> }
+      @if (errores()['nombre-' + idioma()]; as m) { <span class="msg">{{ m }}</span> }
+    </label>
+    <label>Descripción <span class="ayuda">(hasta 6000)</span><textarea name="descripcion" rows="5" maxlength="6100" [(ngModel)]="textoActual().descripcion"></textarea></label>
+
+    <p class="sub">Datos del evento (verifícalos antes de publicar)</p>
+    <div class="rejilla">
+      <label class="casilla"><input type="checkbox" name="gratis" [(ngModel)]="form.gratis" (ngModelChange)="cambio()" /> Entrada gratuita</label>
+      @if (!gratis()) {
+        <label [class.error]="errores()['costoTexto']">Costo <span class="ayuda">(texto, hasta 80)</span><input name="costoTexto" maxlength="90" [(ngModel)]="form.costoTexto" />@if (errores()['costoTexto']; as m) { <span class="msg">{{ m }}</span> }</label>
+      }
+      <label [class.error]="errores()['horaInicio']">Hora de inicio<input type="time" name="horaInicio" [(ngModel)]="form.horaInicio" />@if (errores()['horaInicio']; as m) { <span class="msg">{{ m }}</span> }</label>
+      <label [class.error]="errores()['horaFin']">Hora de fin<input type="time" name="horaFin" [(ngModel)]="form.horaFin" />@if (errores()['horaFin']; as m) { <span class="msg">{{ m }}</span> }</label>
+      <label [class.error]="errores()['sede']">Sede <span class="ayuda">(hasta 120)</span><input name="sede" maxlength="130" [(ngModel)]="form.sede" />@if (errores()['sede']; as m) { <span class="msg">{{ m }}</span> }</label>
+    </div>
+
+    <p class="sub">Negocios que participan ({{ form.negocios.length }} de {{ maxNegocios }})</p>
+    @if (errores()['negocios']; as m) { <p class="aviso" role="alert">{{ m }}</p> }
+    <div class="chips-neg">
+      @for (n of form.negocios; track n.id) {
+        <span class="tag-neg">{{ n.nombre || 'Negocio' }} <button type="button" class="mini" (click)="quitarNegocio(n.id)" [attr.aria-label]="'Quitar ' + n.nombre">×</button></span>
+      }
+    </div>
+    @if (form.negocios.length < maxNegocios) { <app-selector-negocio titulo="Agregar negocio" (cambio)="agregarNegocio($event)" /> }
+
+    @if (errorApi(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+    <div class="barra-guardar">
+      <button type="submit" class="mini-b ok" [disabled]="trabajando()">{{ trabajando() ? 'Guardando…' : 'Guardar evento' }}</button>
+      <a class="mini-b enlace-b" routerLink="/eventos">Cancelar</a>
+      @if (!nuevo()) {
+        @if (!archivando()) { <button type="button" class="mini-b mal" (click)="archivando.set(true)">Archivar</button> }
+        @else {
+          <span class="chico">¿Archivar este evento? Deja de mostrarse.</span>
+          <button type="button" class="mini-b mal" [disabled]="trabajando()" (click)="archivar()">Sí, archivar</button>
+          <button type="button" class="mini-b" (click)="archivando.set(false)">No</button>
+        }
+      }
+    </div>
+  </form>
+}

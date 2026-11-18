@@ -1,0 +1,75 @@
+@if (noExiste()) {
+  <app-no-existe />
+} @else {
+  <div class="contenedor pagina">
+    @if (negocio(); as n) {
+      <nav class="migas" [attr.aria-label]="i18n.t('inicio')">
+        <a [routerLink]="['/', i18n.lang(), 'negocio', n.slug]">← {{ n.nombre }}</a>
+      </nav>
+      <div class="tarjeta">
+        <h1>{{ miResena() ? i18n.t('editarResena') : i18n.t('escribirResena') }}</h1>
+        <p class="negocio"><strong>{{ n.nombre }}</strong><span class="suave"> · {{ n.categoriaNombre }}@if (n.sucursales[0]?.municipioNombre; as m) { · {{ m }} }</span></p>
+
+        @if (!sesion.listo() || cargando()) {
+          <p class="suave" aria-live="polite">{{ i18n.t('cargando') }}</p>
+        } @else if (sesion.autenticado()) {
+          @if (miResena(); as m) {
+            <p class="suave estado">{{ estadoTexto(m.estado) }}@if (m.utiles) { · {{ i18n.tf('utilesN', { n: m.utiles }) }} }</p>
+          }
+          <form class="formulario" (ngSubmit)="enviar()" novalidate>
+            <fieldset [class.error]="campo('calificacion')">
+              <legend>{{ i18n.t('calificacion') }}</legend>
+              <div class="estrellas" role="radiogroup" [attr.aria-label]="i18n.t('calificacion')">
+                @for (e of estrellas; track e) {
+                  <button type="button" role="radio" [attr.aria-checked]="calificacion === e" [attr.aria-label]="e + ' / 5'" [class.on]="e <= calificacion" (click)="calificacion = e">★</button>
+                }
+              </div>
+              @if (campo('calificacion'); as m) { <span class="msg">{{ m }}</span> }
+            </fieldset>
+            <label [class.error]="campo('titulo')">{{ i18n.t('tituloOpcional') }}
+              <input type="text" name="titulo" maxlength="80" [(ngModel)]="titulo" />
+              @if (campo('titulo'); as m) { <span class="msg">{{ m }}</span> }
+            </label>
+            <label [class.error]="campo('texto')">{{ i18n.t('tuResena') }}
+              <textarea name="texto" rows="5" maxlength="2000" [(ngModel)]="texto"></textarea>
+              <span class="contador">{{ texto.length }} / 2000</span>
+              @if (campo('texto'); as m) { <span class="msg">{{ m }}</span> }
+            </label>
+            <label [class.error]="campo('fechaVisita')">{{ i18n.t('cuandoVisitaste') }}
+              <input type="date" name="fecha" [max]="hoy" [(ngModel)]="fecha" />
+              @if (campo('fechaVisita'); as m) { <span class="msg">{{ m }}</span> }
+            </label>
+
+            @if (error().general; as g) { <p class="aviso" role="alert">{{ g }}</p> }
+            @if (aviso(); as a) { <p class="aviso ok" role="status">{{ a }}</p> }
+
+            <div class="acciones">
+              <button type="submit" class="boton" [disabled]="enviando()">{{ miResena() ? i18n.t('guardarCambios') : i18n.t('publicarResena') }}</button>
+              @if (hecho()) {
+                <a class="boton secundario" [routerLink]="['/', i18n.lang(), 'negocio', n.slug]" fragment="resenas">{{ i18n.t('verFicha') }}</a>
+              }
+            </div>
+          </form>
+
+          @if (miResena()) {
+            <div class="borrar">
+              @if (!confirmarBorrar()) {
+                <button type="button" class="enlace" (click)="confirmarBorrar.set(true)">{{ i18n.t('borrarResena') }}</button>
+              } @else {
+                <p>{{ i18n.t('borrarPregunta') }}</p>
+                <div class="acciones">
+                  <button type="button" class="boton" [disabled]="enviando()" (click)="borrar()">{{ i18n.t('siBorrar') }}</button>
+                  <button type="button" class="boton secundario" (click)="confirmarBorrar.set(false)">{{ i18n.t('cancelar') }}</button>
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+    } @else if (error().general; as g) {
+      <p class="aviso" role="alert">{{ g }}</p>
+    } @else {
+      <p class="suave" aria-live="polite">{{ i18n.t('cargando') }}</p>
+    }
+  </div>
+}

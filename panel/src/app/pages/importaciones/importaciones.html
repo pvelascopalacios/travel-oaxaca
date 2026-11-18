@@ -1,0 +1,108 @@
+<header class="cab">
+  <h1>Importaciones</h1>
+  <p class="suave chico">Sube un CSV: se revisa completo y no se guarda nada hasta que lo apliques. Máximo 2 MB y 2000 filas.</p>
+</header>
+
+<ol class="pasos" aria-label="Pasos">
+  <li [class.on]="paso() === 1"><b>1 · Elegir y subir</b>Tipo, plantilla y archivo</li>
+  <li [class.on]="paso() === 2"><b>2 · Revisar</b>Filas correctas y errores</li>
+  <li [class.on]="paso() === 3"><b>3 · Aplicar</b>Guardar lo correcto</li>
+</ol>
+
+@if (aviso(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+@if (errorApi(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+
+@if (tipos().length === 0) {
+  <p class="vacio">Tu rol no puede importar archivos.</p>
+} @else if (!actual()) {
+  <div class="tarjeta">
+    <div class="rejilla">
+      <label>Qué vas a importar *
+        <select name="tipo" [(ngModel)]="tipo">@for (t of tipos(); track t.clave) { <option [value]="t.clave">{{ t.texto }}</option> }</select>
+      </label>
+      <div class="plant"><button type="button" class="mini-b" (click)="plantilla()">Descargar plantilla CSV</button></div>
+    </div>
+    @if (tipoInfo(); as t) { <p class="chico suave">Columnas obligatorias de {{ t.texto.toLowerCase() }}: <b>{{ t.requiere }}</b>. La plantilla trae los encabezados y una fila de ejemplo.</p> }
+    @if (tipos().length < 4) { <p class="chico suave">Con tu rol solo ves los tipos que puedes importar.</p> }
+    <div class="drop" [class.sobre]="arrastrando()" (dragover)="$event.preventDefault(); arrastrando.set(true)" (dragleave)="arrastrando.set(false)" (drop)="alSoltar($event)">
+      <b>Arrastra tu archivo .csv aquí</b>
+      <span class="chico suave">o</span>
+      <label class="mini-b elegir">{{ trabajando() === 'subir' ? 'Revisando el archivo…' : 'Elegir archivo' }}
+        <input type="file" accept=".csv,text/csv" [disabled]="trabajando() !== null" (change)="alElegir($event)" />
+      </label>
+    </div>
+    @if (errorArchivo(); as m) { <p class="msg" role="alert">{{ m }}</p> }
+  </div>
+} @else {
+  @if (actual(); as i) {
+    <div class="tarjeta">
+      <div class="fila-cab"><h2>{{ i.archivo }}</h2><span class="st" [class]="estadoInfo(i.estado).clase">{{ estadoInfo(i.estado).texto }}</span></div>
+      <p class="chico suave">{{ tipoTexto(i.tipo) }} · subido {{ fechaHora(i.creadoEn) }}@if (i.finalizadaEn) { · cerrado {{ fechaHora(i.finalizadaEn) }} }</p>
+      <div class="kpis">
+        <div class="kpi"><b>{{ i.totalFilas }}</b><span>Filas</span></div>
+        <div class="kpi"><b class="bien">{{ i.filasOk }}</b><span>Correctas</span></div>
+        <div class="kpi" [class.alerta]="i.filasError > 0"><b>{{ i.filasError }}</b><span>Con error</span></div>
+      </div>
+      @if ((i.errores ?? []).length) {
+        <div class="tabla">
+          <table>
+            <thead><tr><th>Fila</th><th>Campo</th><th>Valor</th><th>Problema</th></tr></thead>
+            <tbody>@for (e of i.errores; track $index) { <tr><td>{{ e.fila }}</td><td>{{ e.campo }}</td><td class="val">{{ e.valor }}</td><td class="wrap">{{ e.problema }}</td></tr> }</tbody>
+          </table>
+        </div>
+      }
+      @if (sinMostrar()) { <p class="nota">Se guardan hasta 500 errores; descarga el CSV para ver todos.</p> }
+      @if (abierta()) {
+        @if (plan(); as p) {
+          @if (!p.puede) { <p class="aviso ambar">{{ p.texto }}</p> }
+        }
+        <div class="acciones">
+          @if (i.filasError > 0) { <button type="button" class="mini-b" (click)="descargarErrores()">Descargar errores (CSV)</button> }
+          @if (plan(); as p) { @if (p.puede) { <button type="button" class="mini-b ok" [disabled]="trabajando() !== null" (click)="aplicar()">{{ trabajando() === 'aplicar' ? 'Aplicando…' : p.texto }}</button> } }
+          <button type="button" class="mini-b mal" [disabled]="trabajando() !== null" (click)="cancelar()">Cancelar importación</button>
+        </div>
+        @if (confirmando()) {
+          <div class="caja-confirma">
+            <p class="chico">Hay {{ i.filasError }} filas con error. Si continúas, solo se guardan las {{ i.filasOk }} correctas y las demás se descartan. ¿Aplicar?</p>
+            <div class="acciones"><button type="button" class="mini-b mal" [disabled]="trabajando() !== null" (click)="aplicar()">Sí, aplicar las correctas</button><button type="button" class="mini-b" (click)="confirmando.set(false)">No</button></div>
+          </div>
+        }
+      } @else {
+        <div class="acciones">
+          @if (i.filasError > 0) { <button type="button" class="mini-b" (click)="descargarErrores()">Descargar errores (CSV)</button> }
+          <button type="button" class="mini-b ok" (click)="otra()">Importar otro archivo</button>
+        </div>
+      }
+    </div>
+  }
+}
+
+<h2>Historial</h2>
+@if (cargandoHist() && historial().length === 0) { <p class="carga">Cargando…</p> }
+@else if (fallo(); as f) { <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargarHistorial()">Reintentar</button></p> }
+@else if (historial().length === 0) { <p class="vacio">Aún no hay importaciones.</p> }
+@else {
+  <div class="tarjeta tabla">
+    <table>
+      <thead><tr><th>Archivo</th><th>Tipo</th><th>Estado</th><th class="num">Filas</th><th class="num">Correctas</th><th class="num">Errores</th><th>Fecha</th><th></th></tr></thead>
+      <tbody>
+        @for (h of historial(); track h.id) {
+          <tr>
+            <td class="wrap">{{ h.archivo }}</td><td>{{ tipoTexto(h.tipo) }}</td>
+            <td><span class="st" [class]="estadoInfo(h.estado).clase">{{ estadoInfo(h.estado).texto }}</span></td>
+            <td class="num">{{ h.totalFilas }}</td><td class="num">{{ h.filasOk }}</td><td class="num">{{ h.filasError }}</td>
+            <td class="nw">{{ fechaHora(h.creadoEn) }}</td>
+            <td><button type="button" class="mini" (click)="ver(h)">Ver</button></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="paginas">
+    <span class="chico suave">{{ total() }} importaciones</span>
+    <div class="acciones">
+      <button type="button" class="mini-b" [disabled]="!hayAnterior()" (click)="irPagina(-1)">← Anterior</button>
+      <button type="button" class="mini-b" [disabled]="!haySiguiente()" (click)="irPagina(1)">Siguiente →</button>
+    </div>
+  </div>
+}

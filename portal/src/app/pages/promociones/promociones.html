@@ -1,0 +1,82 @@
+@if (cargando() && !ficha()) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else if (ficha(); as n) {
+  <header class="cab">
+    <div class="fila-cab">
+      <h1>{{ n.nombreComercial }}</h1>
+      <span class="estado" [class]="infoNegocio(n.estado).clase">{{ infoNegocio(n.estado).texto }}</span>
+    </div>
+    <p class="suave">Promociones</p>
+  </header>
+
+  @if (sinPlan()) {
+    <section class="candado">
+      <h3>Tu plan {{ plan()?.plan?.nombre }} no incluye promociones</h3>
+      <p>Con un plan de pago puedes mostrar descuentos, 2×1 y regalos en tu ficha para atraer más visitantes.</p>
+      <p><a class="boton" [routerLink]="['/negocios', id(), 'plan']">Ver los planes</a></p>
+    </section>
+  } @else if (editando(); as e) {
+    <app-form-promocion [negocioId]="id()" [promo]="e.promo" [ofertas]="ofertasActivas()" [puedeEnviar]="publicada()" (guardada)="alGuardar($event)" (cancelar)="editando.set(null)" />
+  } @else {
+    @if (!publicada() && !soloLectura()) {
+      <p class="aviso ambar" role="status"><strong>Tu ficha todavía no está publicada.</strong> Puedes preparar borradores, pero solo se envían a revisión cuando la ficha esté publicada.</p>
+    }
+    @if (soloLectura()) {
+      <p class="aviso ambar" role="status">Este negocio está archivado y ya no se puede editar.</p>
+    }
+    <section class="tarjeta" aria-label="Promociones">
+      <div class="fila-cab">
+        <h2>Tus promociones</h2>
+        @if (!soloLectura()) { <button type="button" class="boton" (click)="nueva()">+ Nueva promoción</button> }
+      </div>
+      @if (aviso(); as a) { <p class="aviso ok" role="status">{{ a }}</p> }
+      @if (error(); as m) { <p class="aviso" role="alert">{{ m }}</p> }
+
+      @if (lista().length === 0) {
+        <p class="vacio">Aún no tienes promociones. Crea la primera: un descuento, un 2×1 o un regalo para quien te visite por Travel Oaxaca.</p>
+      } @else {
+        <ul>
+          @for (p of lista(); track p.id) {
+            <li class="promo" [class.ocupada]="trabajandoId() === p.id" [class.apagada]="p.estado === 'vencida'">
+              <div class="valor"><strong>{{ valor(p).grande }}</strong>@if (valor(p).pie) { <small>{{ valor(p).pie }}</small> }</div>
+              <div class="info">
+                <h3>{{ titulo(p) }}</h3>
+                @if (descripcion(p); as d) { <p>{{ d }}</p> }
+                <div class="meta">
+                  <span class="estado" [class]="estado(p.estado).clase">{{ estado(p.estado).texto }}</span>
+                  <span class="etiqueta">{{ tipoTexto(p.tipo) }}</span>
+                  <span class="suave chico">{{ periodo(p.inicio, p.fin) }}</span>
+                  @if (p.codigo) { <span class="codigo">{{ p.codigo }}</span> }
+                  @if (p.ofertaId) { <span class="etiqueta">{{ nombreOferta(p.ofertaId) || 'Una opción' }}</span> }
+                </div>
+                @if (p.condiciones) { <p class="chico">{{ p.condiciones }}</p> }
+                @if (p.motivoRechazo) { <p class="aviso" role="status"><strong>El equipo pidió cambios:</strong> {{ p.motivoRechazo }}</p> }
+              </div>
+              @if (!soloLectura()) {
+                <div class="acc">
+                  @if (p.estado === 'borrador') {
+                    <button type="button" class="mini-b" [disabled]="!!trabajandoId()" (click)="cambiar(p)">Editar</button>
+                    <button type="button" class="mini-b" [disabled]="!!trabajandoId() || !puedeEnviar(p)" [title]="publicada() ? '' : 'Tu ficha tiene que estar publicada'" (click)="enviar(p)">Enviar a revisión</button>
+                  }
+                  <button type="button" class="mini-b mal" [disabled]="!!trabajandoId()" (click)="pedirEliminar(p.id)">Eliminar</button>
+                </div>
+                @if (confirmandoId() === p.id) {
+                  <div class="confirma" role="alertdialog" aria-label="Confirmar eliminar">
+                    <p>¿Eliminar «{{ titulo(p) }}»? @if (p.estado !== 'borrador') { Dejará de mostrarse y no se puede deshacer. }</p>
+                    <div class="fila">
+                      <button type="button" class="mini-b mal" [disabled]="!!trabajandoId()" (click)="eliminar(p)">Sí, eliminar</button>
+                      <button type="button" class="mini-b" (click)="confirmandoId.set(null)">Conservar</button>
+                    </div>
+                  </div>
+                }
+              }
+            </li>
+          }
+        </ul>
+        <p class="suave chico">Solo se pueden editar los borradores. Si una promoción ya está en revisión o activa y quieres cambiarla, elimínala y crea otra.</p>
+      }
+    </section>
+  }
+}

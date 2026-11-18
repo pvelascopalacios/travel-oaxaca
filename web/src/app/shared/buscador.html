@@ -1,0 +1,76 @@
+<form class="buscador" role="search" (submit)="enviar($event)" (focusout)="cerrarSiSale($event)">
+  <label class="visualmente-oculto" [for]="idCampo()">{{ i18n.t('buscadorEtiqueta') }}</label>
+  <div class="campo">
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <input
+      #caja
+      [id]="idCampo()"
+      type="search"
+      name="q"
+      autocomplete="off"
+      enterkeyhint="search"
+      role="combobox"
+      [attr.aria-controls]="'sug-' + idCampo()"
+      aria-autocomplete="list"
+      [attr.aria-expanded]="abierto()"
+      [attr.aria-activedescendant]="activa() >= 0 ? 'op-' + activa() : null"
+      [placeholder]="i18n.t('buscadorPlaceholder')"
+      [value]="texto()"
+      (input)="escribir($any($event.target).value)"
+      (focus)="abrir()"
+      (keydown)="teclas($event)"
+    />
+    <button type="submit" class="boton">{{ i18n.t('buscar') }}</button>
+  </div>
+
+  @if (abierto()) {
+    <div class="panel" [id]="'sug-' + idCampo()" role="listbox" [attr.aria-label]="i18n.t('buscadorEtiqueta')">
+      @if (!consultaActiva()) {
+        @if (historial.recientes().length) {
+          <div class="grupo-titulo">
+            <span>{{ i18n.t('busquedasRecientes') }}</span>
+            <button type="button" class="enlace" (click)="historial.borrar()">{{ i18n.t('borrarRecientes') }}</button>
+          </div>
+          @for (t of historial.recientes(); track t; let i = $index) {
+            <button type="button" role="option" class="opcion" [id]="'op-' + i" [class.activa]="activa() === i" (click)="elegir(atajos()[i])">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.500V12l3 2"/></svg>{{ t }}
+            </button>
+          }
+        }
+        <div class="grupo-titulo"><span>{{ i18n.t('destinosPopulares') }}</span></div>
+        @for (d of destinos; track d; let i = $index) {
+          <button type="button" role="option" class="opcion" [id]="'op-' + (historial.recientes().length + i)" [class.activa]="activa() === historial.recientes().length + i" (click)="elegir(atajos()[historial.recientes().length + i])">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.500-5.700-6.500-11a6.500 6.500 0 0 1 13 0c0 5.300-6.500 11-6.500 11z"/><circle cx="12" cy="10" r="2.300"/></svg>{{ d }}
+          </button>
+        }
+      } @else if (cargando()) {
+        <p class="estado">{{ i18n.t('buscando') }}</p>
+      } @else if (fallo()) {
+        <p class="estado">{{ i18n.t('errorCarga') }}</p>
+      } @else if (sinResultados()) {
+        <p class="estado">{{ i18n.t('sinResultados') }}</p>
+      } @else {
+        @for (o of opciones(); track $index; let i = $index) {
+          @if (armadasN() > 0 && i === 0) {
+            <div class="grupo-titulo"><span>{{ i18n.t('buscarAsi') }}</span></div>
+          }
+          @if (armadasN() > 0 && i === armadasN()) {
+            <div class="grupo-titulo"><span>{{ i18n.t('resultadosSec') }}</span></div>
+          }
+          <button type="button" role="option" class="opcion" [id]="'op-' + i" [class.activa]="activa() === i" (click)="elegir(o)">
+            @if (i < armadasN()) {
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.500-5.700-6.500-11a6.500 6.500 0 0 1 13 0c0 5.300-6.500 11-6.500 11z"/><circle cx="12" cy="10" r="2.300"/></svg>
+              <span class="dos">
+                <strong>{{ o.texto }}</strong>
+                @if (o.detalle) { <span class="detalle">{{ o.detalle }}</span> }
+              </span>
+            } @else {
+              <strong>{{ o.texto }}</strong>
+              <span class="detalle">{{ o.detalle }}</span>
+            }
+          </button>
+        }
+      }
+    </div>
+  }
+</form>

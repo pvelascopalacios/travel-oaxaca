@@ -1,0 +1,18 @@
+@use '../comun';
+.volver { color: var(--grana); font-size: 0.9rem; text-decoration: none; display: inline-flex; min-height: var(--toque); align-items: center; }
+.cols { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.izq, .der { display: grid; gap: 16px; min-width: 0; }
+h2 { margin: 0; font-size: 1.1rem; } h3 { margin: 0; font-size: 0.95rem; } p { margin: 0; }
+.diff { display: grid; gap: 10px; }
+.cambio-fila { display: grid; grid-template-columns: 130px minmax(0, 1fr) minmax(0, 1fr); gap: 10px; padding: 10px; border: 1px solid var(--linea); border-radius: 10px; font-size: 0.88rem; }
+.campo { font-weight: 700; }
+.antes, .despues { padding: 6px 8px; border-radius: 8px; overflow-wrap: anywhere; display: grid; gap: 2px; align-content: start; small { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.8; } }
+.antes { background: var(--rojo); color: var(--rojo-texto); p { text-decoration: line-through; } }
+.despues { background: var(--ok); color: var(--sierra); &.roto { background: var(--ambar); color: var(--ambar-texto); } }
+.datos { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 14px; align-items: start; }
+.portada { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 12px; background: var(--cantera); }
+dl { margin: 0; display: grid; gap: 8px; div { display: grid; gap: 2px; } dt { font: 600 0.72rem var(--fuente); text-transform: uppercase; letter-spacing: 0.05em; color: var(--suave); } dd { margin: 0; overflow-wrap: anywhere; display: flex; flex-wrap: wrap; gap: 4px; } }
+.texto { display: grid; gap: 4px; padding-top: 10px; border-top: 1px solid var(--linea); }
+.fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; figure { margin: 0; display: grid; gap: 4px; } img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; background: var(--cantera); } figcaption { display: flex; } }
+.boton.mal { background: var(--papel); color: var(--grana); border: 1.5px solid var(--grana); }
+@media (max-width: 900px) { .cols { grid-template-columns: minmax(0, 1fr); } .cambio-fila { grid-template-columns: minmax(0, 1fr); } .datos { grid-template-columns: minmax(0, 1fr); } }

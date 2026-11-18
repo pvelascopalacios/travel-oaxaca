@@ -1,0 +1,55 @@
+<div class="contenedor pagina">
+  <header class="cabecera">
+    <div>
+      <h1>{{ i18n.t('misResenasTitulo') }}</h1>
+      <p class="suave">{{ i18n.t('misResenasTexto') }}</p>
+    </div>
+    <a class="enlace-vuelta" [routerLink]="['/', i18n.lang(), 'perfil']">{{ i18n.t('perfilIrAPerfil') }}</a>
+  </header>
+
+  @if (aviso(); as a) { <p class="aviso ok" role="status">{{ a }}</p> }
+  @if (error(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+
+  @if (resenas() === null) {
+    <p class="suave" aria-live="polite">{{ i18n.t('cargando') }}</p>
+  } @else if (fallo()) {
+    <div class="tarjeta">
+      <p class="aviso" role="alert">{{ i18n.t('errorCarga') }}</p>
+      <button type="button" class="boton secundario" (click)="resenas.set(null); cargar()">{{ i18n.t('perfilReintentar') }}</button>
+    </div>
+  } @else if (resenas()!.length === 0) {
+    <div class="tarjeta vacio"><p>{{ i18n.t('misResenasVacio') }}</p></div>
+  } @else {
+    <ul class="resenas">
+      @for (r of resenas(); track r.id) {
+        <li class="resena">
+          <div class="arriba">
+            <a class="negocio" [routerLink]="['/', i18n.lang(), 'negocio', r.negocioSlug]">{{ r.negocioNombre }}</a>
+            <span class="estado" [class]="estado(r).clase">{{ i18n.t(estado(r).clave) }}</span>
+          </div>
+          <p class="estrellas" [attr.aria-label]="r.calificacion + ' / 5'">
+            @for (n of estrellas; track n) { <span [class.llena]="n <= r.calificacion" aria-hidden="true">★</span> }
+          </p>
+          @if (r.titulo) { <p class="titulo-r">{{ r.titulo }}</p> }
+          <p>{{ r.texto || i18n.t('misResenasSinTexto') }}</p>
+          <p class="suave pequeno">
+            @if (visita(r); as v) { {{ v }} }
+            @if (utiles(r); as u) { · {{ u }} }
+          </p>
+          @if (confirmar() === r.id) {
+            <div class="acciones" role="alertdialog" [attr.aria-label]="i18n.t('misResenasBorrarPregunta')">
+              <strong>{{ i18n.t('misResenasBorrarPregunta') }}</strong>
+              <button type="button" class="boton peligroso chico" [disabled]="borrando()" (click)="borrar(r)">{{ i18n.t('listaBorrarSi') }}</button>
+              <button type="button" class="boton secundario chico" (click)="confirmar.set(null)">{{ i18n.t('listaCancelar') }}</button>
+            </div>
+          } @else {
+            <div class="acciones">
+              <a class="boton secundario chico" [routerLink]="['/', i18n.lang(), 'negocio', r.negocioSlug, 'resena']">{{ i18n.t('misResenasEditar') }}</a>
+              <button type="button" class="boton secundario chico peligro" (click)="confirmar.set(r.id)">{{ i18n.t('misResenasBorrar') }}</button>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+</div>

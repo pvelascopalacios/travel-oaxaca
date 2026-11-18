@@ -1,0 +1,14 @@
+@use '../comun';
+.filtros { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; label { display: grid; gap: 4px; font-weight: 600; font-size: 0.86rem; min-width: 0; } .q { flex: 1 1 220px; } .q input { width: 100%; } }
+.lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.caja { border: 1px solid var(--linea); border-radius: 12px; background: var(--papel); min-width: 0; &.abierta { border-color: var(--grana); } }
+.usr { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px; }
+.dato { min-width: 0; h3 { margin: 0; font-size: 1rem; overflow-wrap: anywhere; } p { margin: 4px 0 0; } }
+.av { width: 44px; height: 44px; border-radius: 50%; background: var(--noche); color: #fff; display: grid; place-items: center; font: 800 0.9rem var(--fuente-titulo); }
+.rolchip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 6px 3px 10px; border-radius: 999px; background: var(--cantera); font: 700 0.76rem var(--fuente);
+  &.fijo { padding-right: 10px; opacity: 0.8; }
+  button { width: 26px; height: 26px; border: 0; border-radius: 50%; background: var(--papel); color: var(--grana); font-weight: 800; cursor: pointer; &:disabled { opacity: 0.35; cursor: not-allowed; } } }
+.admin { display: grid; gap: 10px; padding: 12px; border-top: 1px solid var(--linea); h4 { margin: 4px 0 0; font-size: 0.95rem; } }
+.chips-roles { display: flex; flex-wrap: wrap; gap: 8px; }
+.confirma { display: grid; gap: 8px; padding: 10px; border: 1px dashed var(--grana); border-radius: 10px; p { margin: 0; } }
+@media (max-width: 640px) { .usr { grid-template-columns: 44px minmax(0, 1fr); button { grid-column: 1 / -1; } } }

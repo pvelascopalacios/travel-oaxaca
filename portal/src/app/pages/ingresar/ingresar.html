@@ -1,0 +1,76 @@
+<div class="pagina">
+  <div class="caja">
+    <div class="marca"><img src="logo-emblema.png" alt="" width="40" height="40" /><span>Travel Oaxaca<small>Portal del negocio</small></span></div>
+    <h1>{{ titulo() }}</h1>
+
+    @if (vista() === 'ingreso' || vista() === 'registro') {
+      <p class="suave">
+        @if (vista() === 'registro') { Crea tu cuenta y registra tu negocio. No se publica hasta que el equipo lo revise. }
+        @else { Administra la ficha de tu negocio y mira cuánta gente la visita. }
+      </p>
+    }
+
+    @if (vista() === 'verificar') {
+      @if (enviando()) { <p class="suave" aria-live="polite">Confirmando…</p> }
+      @if (aviso(); as a) {
+        <p class="aviso ok" role="status">{{ a }}</p>
+        <a class="boton" routerLink="/ingresar">Ingresar</a>
+      }
+      @if (error().general; as g) {
+        <p class="aviso" role="alert">{{ g }}</p>
+        <a class="boton secundario" routerLink="/ingresar">Ir a ingresar</a>
+      }
+    } @else {
+      <form (ngSubmit)="enviar()" novalidate>
+        @if (vista() === 'registro') {
+          <label [class.error]="campo('nombre')">Tu nombre
+            <input type="text" name="nombre" autocomplete="name" maxlength="120" required [(ngModel)]="nombre" />
+            @if (campo('nombre'); as m) { <span class="msg">{{ m }}</span> }
+          </label>
+        }
+        @if (vista() !== 'restablecer') {
+          <label [class.error]="campo('correo')">Correo
+            <input type="email" name="correo" autocomplete="email" inputmode="email" maxlength="254" required [(ngModel)]="correo" />
+            @if (campo('correo'); as m) { <span class="msg">{{ m }}</span> }
+          </label>
+        }
+        @if (vista() !== 'olvide') {
+          <label [class.error]="campo('clave')">{{ vista() === 'restablecer' ? 'Contraseña nueva' : 'Contraseña' }}
+            <input type="password" name="clave" [attr.autocomplete]="vista() === 'ingreso' ? 'current-password' : 'new-password'" maxlength="128" required [(ngModel)]="clave" />
+            @if (campo('clave'); as m) { <span class="msg">{{ m }}</span> }
+          </label>
+        }
+        @if (vista() === 'registro') {
+          <label class="check" [class.error]="campo('aceptaTerminos')">
+            <input type="checkbox" name="acepta" [(ngModel)]="acepta" />
+            <span>Acepto los <a [href]="sitio.valor + '/es/terminos'" target="_blank" rel="noopener">términos</a> y el <a [href]="sitio.valor + '/es/privacidad'" target="_blank" rel="noopener">aviso de privacidad</a>.</span>
+          </label>
+          @if (campo('aceptaTerminos'); as m) { <span class="msg">{{ m }}</span> }
+        }
+
+        @if (error().general; as g) { <p class="aviso" role="alert">{{ g }}</p> }
+        @if (aviso(); as a) { <p class="aviso ok" role="status">{{ a }}</p> }
+
+        <button type="submit" class="boton" [disabled]="enviando()">
+          @switch (vista()) {
+            @case ('registro') { Crear cuenta }
+            @case ('olvide') { Enviar enlace }
+            @case ('restablecer') { Guardar contraseña }
+            @default { Ingresar }
+          }
+        </button>
+      </form>
+
+      <div class="otros">
+        @if (vista() === 'ingreso') {
+          <button type="button" class="enlace" (click)="cambiar('olvide')">Olvidé mi contraseña</button>
+          <p class="suave">¿Primera vez? <button type="button" class="enlace" (click)="cambiar('registro')">Registra tu negocio</button></p>
+        } @else if (vista() === 'registro') {
+          <p class="suave">¿Ya tienes cuenta? <button type="button" class="enlace" (click)="cambiar('ingreso')">Ingresar</button></p>
+        } @else {
+          <button type="button" class="enlace" (click)="cambiar('ingreso')">Volver a ingresar</button>
+        }
+      </div>
+    }
+  </div>
+</div>

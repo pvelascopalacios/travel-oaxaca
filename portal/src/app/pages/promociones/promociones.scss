@@ -1,0 +1,7 @@
+@use '../comun';
+.promo { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 14px; padding: 14px; border: 1px solid var(--linea); border-radius: 14px; &.ocupada { opacity: 0.6; } &.apagada { opacity: 0.7; } .acc, .confirma { grid-column: 1 / -1; } }
+.valor { min-width: 78px; text-align: center; align-self: start; padding: 10px 8px; border-radius: 12px; background: var(--aviso); color: var(--grana); strong { display: block; font: 800 1.35rem var(--fuente-titulo); } small { font-size: 0.7rem; } }
+.info { min-width: 0; h3 { margin: 0; font: 700 1.02rem var(--fuente-titulo); overflow-wrap: anywhere; } p { margin: 4px 0 0; font-size: 0.88rem; color: var(--suave); overflow-wrap: anywhere; } .aviso { color: inherit; } }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin-top: 8px; }
+.codigo { font: 700 0.78rem ui-monospace, monospace; padding: 2px 8px; border: 1.5px dashed var(--ocre); border-radius: 6px; }
+.acc { display: flex; flex-wrap: wrap; gap: 8px; }

@@ -1,0 +1,92 @@
+<a class="volver" routerLink="/rutas">← Volver a rutas</a>
+
+@if (cargando()) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }}</p>
+} @else {
+  <header class="cab fila-cab">
+    <h1>{{ nuevo() ? 'Nueva ruta' : nombre() || 'Editar ruta' }}</h1>
+    @if (!nuevo()) { <span class="st" [class]="estadoInfo(form.estado).clase">{{ estadoInfo(form.estado).texto }}</span> }
+  </header>
+  @if (aviso(); as a) { <p class="ok-aviso" role="status">{{ a }}</p> }
+
+  <form class="tarjeta" (ngSubmit)="guardar()" novalidate>
+    <div class="rejilla">
+      <label [class.error]="errores()['duracionHoras']">Duración (horas) *
+        <input name="duracion" inputmode="decimal" [(ngModel)]="form.duracionHoras" />
+        @if (errores()['duracionHoras']; as m) { <span class="msg">{{ m }}</span> }
+      </label>
+      <label [class.error]="errores()['distanciaKm']">Distancia (km)
+        <input name="distancia" inputmode="decimal" [(ngModel)]="form.distanciaKm" />
+        @if (errores()['distanciaKm']; as m) { <span class="msg">{{ m }}</span> }
+      </label>
+      <label>Dificultad *<select name="dificultad" [(ngModel)]="form.dificultad">@for (d of dificultades; track d.clave) { <option [value]="d.clave">{{ d.texto }}</option> }</select></label>
+      <label>Transporte *<select name="transporte" [(ngModel)]="form.transporte">@for (t of transportes; track t.clave) { <option [value]="t.clave">{{ t.texto }}</option> }</select></label>
+      <label>Estado *<select name="estado" [(ngModel)]="form.estado">@for (e of estados; track e.clave) { <option [value]="e.clave">{{ e.texto }}</option> }</select></label>
+      <label class="casilla"><input type="checkbox" name="premium" [(ngModel)]="form.esPremium" /> Ruta premium</label>
+    </div>
+
+    <p class="sub">Textos por idioma</p>
+    <app-idiomas-pestanas [idiomas]="cat.idiomasOrdenados()" [activo]="idioma()" [conTexto]="conTexto()" [errores]="idiomasConError()" (cambio)="idioma.set($event)" />
+    @if (errores()['texto-' + idioma()]; as m) { <p class="aviso" role="alert">{{ m }}</p> }
+    <label [class.error]="(idioma() === 'es' && errores()['nombre']) || errores()['nombre-' + idioma()]">Nombre{{ idioma() === 'es' ? ' *' : '' }} <span class="ayuda">(hasta 200)</span>
+      <input name="nombre" maxlength="210" [(ngModel)]="textoActual().nombre" (ngModelChange)="cambio()" />
+      @if (idioma() === 'es' && errores()['nombre']; as m) { <span class="msg">{{ m }}</span> }
+      @if (errores()['nombre-' + idioma()]; as m) { <span class="msg">{{ m }}</span> }
+    </label>
+    <label>Descripción <span class="ayuda">(hasta 6000)</span><textarea name="descripcion" rows="5" maxlength="6100" [(ngModel)]="textoActual().descripcion"></textarea></label>
+
+    <p class="sub">Paradas en orden ({{ paradas().length }} de {{ maxParadas }}; para publicar hacen falta al menos 2)</p>
+    @if (errores()['paradas']; as m) { <p class="aviso" role="alert">{{ m }}</p> }
+    @if (paradas().length === 0) { <p class="vacio">Aún no hay paradas.</p> }
+    <ol class="paradas">
+      @for (p of paradas(); track p; let i = $index) {
+        <li class="parada" [class.error]="errores()['parada-' + i]">
+          <span class="n">{{ i + 1 }}</span>
+          <div class="tipo">
+            @switch (p.tipo) {
+              @case ('lugar') { <span class="tag">Lugar</span> <b>{{ p.nombre || 'Lugar' }}</b> }
+              @case ('negocio') { <span class="tag">Negocio</span> <b>{{ p.nombre || 'Negocio' }}</b> }
+              @default {
+                <span class="tag">Punto del mapa</span>
+                <label class="mini-campo">Latitud <input [name]="'lat' + i" inputmode="decimal" [(ngModel)]="p.latitud" /></label>
+                <label class="mini-campo">Longitud <input [name]="'lng' + i" inputmode="decimal" [(ngModel)]="p.longitud" /></label>
+              }
+            }
+          </div>
+          <label class="mini-campo">Minutos <input [name]="'min' + i" inputmode="numeric" [(ngModel)]="p.minutos" /></label>
+          <div class="mov">
+            <button type="button" class="mini" [disabled]="i === 0" (click)="mover(i, -1)" aria-label="Subir parada">↑</button>
+            <button type="button" class="mini" [disabled]="i === paradas().length - 1" (click)="mover(i, 1)" aria-label="Bajar parada">↓</button>
+            <button type="button" class="mini" (click)="quitar(i)">Quitar</button>
+          </div>
+          @if (errores()['parada-' + i]; as m) { <p class="msg fila-error">{{ m }}</p> }
+        </li>
+      }
+    </ol>
+    @if (paradas().length < maxParadas) {
+      <div class="acciones">
+        <button type="button" class="mini-b" (click)="agregando.set('lugar')">+ Lugar</button>
+        <button type="button" class="mini-b" (click)="agregando.set('negocio')">+ Negocio</button>
+        <button type="button" class="mini-b" (click)="agregarPunto()">+ Punto del mapa</button>
+      </div>
+      @if (agregando() === 'lugar') { <app-selector-busqueda titulo="Agregar lugar" placeholder="Buscar lugar…" [buscar]="buscarLugares" [quitable]="false" (cambio)="agregarLugar($event)" /> }
+      @if (agregando() === 'negocio') { <app-selector-negocio titulo="Agregar negocio" (cambio)="agregarNegocio($event)" /> }
+    }
+
+    @if (errorApi(); as e) { <p class="aviso" role="alert">{{ e }}</p> }
+    <div class="barra-guardar">
+      <button type="submit" class="mini-b ok" [disabled]="trabajando()">{{ trabajando() ? 'Guardando…' : 'Guardar ruta' }}</button>
+      <a class="mini-b enlace-b" routerLink="/rutas">Cancelar</a>
+      @if (!nuevo()) {
+        @if (!archivando()) { <button type="button" class="mini-b mal" (click)="archivando.set(true)">Archivar</button> }
+        @else {
+          <span class="chico">¿Archivar esta ruta? Deja de mostrarse.</span>
+          <button type="button" class="mini-b mal" [disabled]="trabajando()" (click)="archivar()">Sí, archivar</button>
+          <button type="button" class="mini-b" (click)="archivando.set(false)">No</button>
+        }
+      }
+    </div>
+  </form>
+}

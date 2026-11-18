@@ -1,0 +1,75 @@
+@if (cargando() && !ficha()) {
+  <p class="carga" aria-live="polite">Cargando tu ficha…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else if (ficha(); as n) {
+  <header class="cab-e">
+    <div>
+      <div class="fila-cab">
+        <h1>{{ n.nombreComercial }}</h1>
+        <span class="estado" [class]="estado().clase">{{ estado().texto }}</span>
+      </div>
+      <p class="suave">Editar la ficha · se guarda por sección</p>
+    </div>
+    <div class="avance-e">
+      <span class="anillo" [style.--p]="n.puntajeFicha"><b>{{ n.puntajeFicha }}%</b></span>
+      <span class="chico"><strong>Ficha al {{ n.puntajeFicha }} %</strong>@if (requisitos().length) {<br /><span class="suave">{{ faltanN() === 1 ? 'Falta 1 para enviarla' : 'Faltan ' + faltanN() + ' para enviarla' }}</span>}</span>
+    </div>
+  </header>
+
+  <nav class="secs" aria-label="Secciones de la ficha">
+    @for (s of estadoSecciones(); track s.clave) {
+      <a class="sec" [routerLink]="[]" [queryParams]="{ seccion: s.clave }" [class.on]="actual() === s.clave" [attr.aria-current]="actual() === s.clave ? 'page' : null">
+        <i [class.ok]="s.ok" [class.no]="s.incompleta" aria-hidden="true">{{ s.incompleta ? '!' : s.ok ? '✓' : '·' }}</i>
+        <span><strong>{{ s.texto }}</strong><small>{{ s.nota }}</small></span>
+      </a>
+    }
+  </nav>
+
+  @if (n.estado === 'en_revision') {
+    <p class="aviso ambar" role="status"><strong>Tu ficha está en revisión.</strong> No se puede editar hasta que el equipo la apruebe o te pida cambios.</p>
+  } @else if (n.estado === 'archivada') {
+    <p class="aviso ambar" role="status">Este negocio está archivado y ya no se puede editar.</p>
+  } @else if (n.estado === 'publicada' || n.estado === 'pausada') {
+    <p class="aviso ambar" role="note">Tu ficha ya está publicada. Los cambios pequeños se ven al instante; la ubicación de la sucursal principal y otros cambios sensibles esperan la revisión del equipo.</p>
+  }
+  @if (catalogoFallo()) {
+    <p class="aviso" role="alert">No pudimos cargar algunas listas (categorías, servicios, idiomas o municipios). Recarga la página.</p>
+  }
+
+  <div class="ed-cols">
+    <div class="editor-form">
+    @switch (actual()) {
+      @case ('datos') { <app-seccion-datos [ficha]="n" [arbol]="arbol()" [idiomas]="idiomas()" [soloLectura]="soloLectura()" (guardado)="alGuardar($event)" /> }
+      @case ('descripcion') { <app-seccion-descripcion [ficha]="n" [soloLectura]="soloLectura()" (guardado)="alGuardar($event)" /> }
+      @case ('ubicacion') { <app-seccion-ubicacion [ficha]="n" [municipios]="municipios()" [soloLectura]="soloLectura()" (guardado)="alGuardar($event)" /> }
+      @case ('contacto') { <app-seccion-contacto [ficha]="n" [servicios]="servicios()" [idiomas]="idiomas()" [soloLectura]="soloLectura()" (guardado)="alGuardar($event)" /> }
+    }
+    </div>
+    <aside class="ed-aside" aria-label="Vista previa y pendientes">
+      <section class="tarjeta previa">
+        <div class="fila-cab"><h2>Así se ve en el sitio</h2><span class="suave chico">con lo ya guardado</span></div>
+        <div class="mini">
+          <div class="mini-p" [style.background-image]="portada() ? 'url(' + portada() + ')' : null"></div>
+          <div class="mini-c">
+            <strong>{{ n.nombreComercial }}</strong>
+            <span class="suave chico">{{ categoria() }}@if (municipio()) { · {{ municipio() }} }</span>
+            @if (descCorta(); as d) { <span class="chico">{{ d }}</span> } @else { <span class="chico suave">Aquí aparecerá tu descripción corta…</span> }
+            @if (precio(); as p) { <span class="chico"><strong>{{ p }}</strong></span> }
+          </div>
+        </div>
+      </section>
+      @if (requisitos().length) {
+        <section class="tarjeta" aria-label="Para enviarla a revisión">
+          <h2>Para enviarla a revisión</h2>
+          <ul class="reqs">
+            @for (q of requisitos(); track q.clave) {
+              <li [class.ok]="!q.falta"><span aria-hidden="true">{{ q.falta ? '!' : '✓' }}</span>{{ q.nombre }}@if (q.clave === 'fotos' && q.falta) { <small>(tienes {{ fotos() }})</small> }</li>
+            }
+          </ul>
+          <a class="enlace" [routerLink]="['/negocios', n.id]">Ir al resumen →</a>
+        </section>
+      }
+    </aside>
+  </div>
+}

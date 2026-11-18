@@ -1,0 +1,6 @@
+@use '../comun';
+.miembro { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px 12px; align-items: center; padding: 12px; border: 1px solid var(--linea); border-radius: 12px; &.ocupada { opacity: 0.6; } .confirma { grid-column: 1 / -1; } }
+.avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--azul); color: var(--laguna); display: grid; place-items: center; font: 700 0.9rem var(--fuente-titulo); }
+.datos { min-width: 0; display: grid; gap: 2px; strong, span { overflow-wrap: anywhere; } }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+@media (max-width: 480px) { .miembro { grid-template-columns: auto minmax(0, 1fr); .mini-b { grid-column: 1 / -1; } } }

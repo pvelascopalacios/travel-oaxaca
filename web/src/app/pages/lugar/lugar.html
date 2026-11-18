@@ -1,0 +1,108 @@
+@if (noExiste()) {
+  <app-no-existe />
+} @else if (fallo()) {
+  <div class="contenedor pagina"><p class="aviso-error">{{ i18n.t('errorCarga') }}</p></div>
+} @else if (l(); as l) {
+  <article class="contenedor pagina">
+    <nav class="migas" [attr.aria-label]="i18n.t('inicio')">
+      <a [routerLink]="['/', i18n.lang()]">{{ i18n.t('inicio') }}</a>
+      <span aria-hidden="true">›</span>
+      <a [routerLink]="['/', i18n.lang(), 'lugares']">{{ i18n.t('tituloLugares') }}</a>
+      <span aria-hidden="true">›</span>
+      <span>{{ l.nombre }}</span>
+    </nav>
+
+    <app-galeria [fotos]="l.fotos" [nombre]="l.nombre" />
+
+    <header class="cabecera">
+      <p class="eyebrow">{{ i18n.tDinamico('tipo', l.tipo) }}@if (l.municipioNombre) { · {{ l.municipioNombre }} }</p>
+      <h1>{{ l.nombre }}</h1>
+      @if (l.regionNombre) {
+        <p class="suave">{{ l.regionNombre }}</p>
+      }
+      <div class="guardar-fila">
+        <div class="guardar-caja"><app-guardar tipo="lugar" [elementoId]="l.id" /></div>
+        <div class="guardar-caja"><app-guardar-en-lista tipo="lugar" [elementoId]="l.id" /></div>
+      </div>
+    </header>
+
+    <div class="cuerpo" [class.una]="!pines().length">
+      <div class="principal">
+        @if (resumen().length) {
+          <section class="bloque">
+            @for (p of resumen(); track $index) {
+              <p>{{ p }}</p>
+            }
+          </section>
+        }
+        @if (datos().length) {
+          <section class="bloque">
+            <h2>{{ i18n.t('datosPracticos') }}</h2>
+            <dl class="datos">
+              @for (d of datos(); track d.etiqueta) {
+                <div>
+                  <dt>{{ d.etiqueta }}</dt>
+                  <dd>{{ d.valor }}</dd>
+                </div>
+              }
+            </dl>
+          </section>
+        }
+        @if (historia().length) {
+          <section class="bloque">
+            <h2>{{ i18n.t('historia') }}</h2>
+            @for (p of historia(); track $index) {
+              <p>{{ p }}</p>
+            }
+          </section>
+        }
+        @if (recomendaciones().length) {
+          <section class="bloque">
+            <h2>{{ i18n.t('recomendaciones') }}</h2>
+            @for (p of recomendaciones(); track $index) {
+              <p>{{ p }}</p>
+            }
+          </section>
+        }
+        @if (comoLlegarTexto().length) {
+          <section class="bloque">
+            <h2>{{ i18n.t('comoLlegar') }}</h2>
+            @for (p of comoLlegarTexto(); track $index) {
+              <p>{{ p }}</p>
+            }
+          </section>
+        }
+        <app-comentarios class="bloque-com" seccion="lugares" [slug]="l.slug" [objetoId]="l.id" />
+      </div>
+      @if (pines().length) {
+        <aside class="mapa-lado lado-lugar" [attr.aria-label]="i18n.t('mapa')">
+          <div class="mapa"><app-mapa [pines]="pines()" [conZona]="false" /></div>
+          @if (llegar(); as u) {
+            <a class="boton secundario" [href]="u" target="_blank" rel="noopener noreferrer">{{ i18n.t('comoLlegar') }}</a>
+          }
+        </aside>
+      }
+    </div>
+
+    @if (atractivosConFoto().length) {
+      <section class="bloque extra">
+        <h2>{{ i18n.t('atractivos') }}</h2>
+        <div class="rejilla">
+          @for (a of atractivosConFoto(); track a.id) {
+            <app-tarjeta-lugar [lugar]="a" />
+          }
+        </div>
+      </section>
+    }
+    @if (cercanosConFoto().length) {
+      <section class="bloque extra">
+        <h2>{{ i18n.t('negociosCercanos') }}</h2>
+        <div class="rejilla">
+          @for (n of cercanosConFoto(); track n.id) {
+            <app-tarjeta-negocio [negocio]="n" />
+          }
+        </div>
+      </section>
+    }
+  </article>
+}

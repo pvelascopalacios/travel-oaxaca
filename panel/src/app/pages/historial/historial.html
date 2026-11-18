@@ -1,0 +1,37 @@
+<header class="cab">
+  <h1>Historial de revisiones</h1>
+  <p class="suave chico">Lo más reciente primero.</p>
+</header>
+
+@if (cargando()) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else if (filas().length === 0) {
+  <p class="vacio">Todavía no hay revisiones resueltas.</p>
+} @else {
+  <div class="tarjeta tabla">
+    <table>
+      <thead><tr><th>Fecha</th><th>Tipo</th><th>Negocio</th><th>Resultado</th><th>Motivo</th><th>Revisó</th></tr></thead>
+      <tbody>
+        @for (h of filas(); track $index) {
+          <tr>
+            <td class="nw">{{ hora(h.resueltaEn) }}</td>
+            <td><span class="st" [class]="tipo(h.tipo).clase">{{ tipo(h.tipo).texto }}</span></td>
+            <td>{{ h.nombreComercial }}</td>
+            <td><span class="st" [class]="resultado(h.resultado).clase">{{ resultado(h.resultado).texto }}</span></td>
+            <td class="motivo">{{ h.motivo || '—' }}</td>
+            <td class="nw">{{ h.revisorNombre || '—' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <div class="paginas">
+    <span class="chico suave">Mostrando {{ desde() }}–{{ hasta() }} de {{ total() }}</span>
+    <div class="acciones">
+      <a class="mini-b enlace-b" [class.inactivo]="!hayAnterior()" routerLink="/revision/historial" [queryParams]="{ pagina: nPagina() > 1 ? '' + nPagina() : null }">← Anterior</a>
+      <a class="mini-b enlace-b" [class.inactivo]="!haySiguiente()" routerLink="/revision/historial" [queryParams]="{ pagina: '' + (nPagina() + 2) }">Siguiente →</a>
+    </div>
+  </div>
+}

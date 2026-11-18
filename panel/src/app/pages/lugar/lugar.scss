@@ -1,0 +1,8 @@
+@use '../comun';
+.fotos-ord { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px;
+  li { display: grid; gap: 6px; position: relative; min-width: 0; }
+  img, .sin-prev { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; background: var(--cantera); }
+  .sin-prev { display: grid; place-items: center; color: var(--suave); font-weight: 600; font-size: 0.84rem; border: 1px dashed var(--linea); }
+  .portada { position: absolute; top: 6px; left: 6px; background: var(--ok); color: var(--sierra); }
+  .mov { display: flex; flex-wrap: wrap; gap: 4px; }
+}

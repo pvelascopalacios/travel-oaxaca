@@ -1,0 +1,112 @@
+:host {
+  display: block;
+}
+
+.pagina {
+  display: grid;
+  gap: 18px;
+  padding-block: 24px 72px;
+}
+
+.cabecera h1 {
+  margin: 0;
+  font: 800 clamp(1.8rem, 1.3rem + 2vw, 2.6rem) var(--fuente-titulo);
+}
+
+.cabecera p,
+.vacio p {
+  margin: 0;
+}
+
+.suave {
+  color: var(--tinta-suave);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1.5px solid var(--linea);
+  border-radius: 999px;
+  background: var(--papel);
+  color: var(--tinta);
+  font: 600 0.88rem var(--fuente);
+  cursor: pointer;
+
+  &.on {
+    background: var(--noche);
+    border-color: var(--noche);
+    color: #fff;
+  }
+}
+
+.rejilla {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+}
+
+.fav {
+  position: relative;
+  min-width: 0;
+  border-radius: var(--radio);
+  background: var(--papel);
+  box-shadow: var(--sombra);
+  overflow: hidden;
+}
+
+.enlace-fav {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.foto {
+  aspect-ratio: 4 / 3;
+  background: var(--cantera);
+}
+
+.txt {
+  display: grid;
+  gap: 2px;
+  padding: 12px 14px 15px;
+
+  small {
+    color: var(--tinta-suave);
+  }
+
+  h2 {
+    margin: 0;
+    font: 700 1.1rem var(--fuente-titulo);
+    overflow-wrap: anywhere;
+  }
+}
+
+.corazon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: var(--toque);
+  height: var(--toque);
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--grana);
+  font-size: 1.2rem;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 22%);
+  cursor: pointer;
+}
+
+.vacio {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+  padding: 28px;
+  border-radius: var(--radio);
+  background: var(--cantera);
+}

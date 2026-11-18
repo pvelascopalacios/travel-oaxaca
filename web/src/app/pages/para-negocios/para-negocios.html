@@ -1,0 +1,117 @@
+<section class="portada">
+  <div class="contenedor portada-in">
+    <span class="etiqueta">{{ i18n.t('pnKicker') }}</span>
+    <h1>{{ i18n.t('pnTitulo') }}</h1>
+    <p class="intro">{{ i18n.t('pnIntro') }}</p>
+    <div class="acciones">
+      <a class="boton claro" [href]="registro">{{ i18n.t('pnRegistrar') }}</a>
+      <button type="button" class="boton contorno" (click)="irAPlanes()">{{ i18n.t('pnVerPlanes') }}</button>
+      <button type="button" class="boton contorno" (click)="irAContacto()">{{ i18n.t('ctQuiero') }}</button>
+    </div>
+    <p class="cuenta">{{ i18n.t('pnYaTienes') }} <a [href]="ingreso">{{ i18n.t('pnEntrar') }}</a></p>
+  </div>
+</section>
+
+<section class="contenedor seccion" aria-labelledby="como">
+  <h2 id="como">{{ i18n.t('pnComoTitulo') }}</h2>
+  <ol class="pasos">
+    @for (p of pasos; track p.titulo; let i = $index) {
+      <li>
+        <span class="num" aria-hidden="true">{{ i + 1 }}</span>
+        <h3>{{ i18n.t(p.titulo) }}</h3>
+        <p>{{ i18n.t(p.texto) }}</p>
+      </li>
+    }
+  </ol>
+</section>
+
+<section class="contenedor seccion" id="planes" aria-labelledby="planes-t">
+  <h2 id="planes-t">{{ i18n.t('pnPlanesTitulo') }}</h2>
+  <p class="suave">{{ i18n.t('pnPlanesIntro') }}</p>
+
+  @if (periodos().length > 1) {
+    <div class="periodos" role="group" [attr.aria-label]="i18n.t('pnPeriodo')">
+      @for (p of periodos(); track p) {
+        <button type="button" [attr.aria-pressed]="periodo() === p" [class.activo]="periodo() === p" (click)="periodo.set(p)">{{ i18n.t(p === 'anual' ? 'pnAnual' : 'pnMensual') }}</button>
+      }
+    </div>
+  }
+
+  @if (fallo()) {
+    <p class="aviso-error" role="alert">{{ i18n.t('errorCarga') }} <button type="button" class="enlace" (click)="cargar()">{{ i18n.t('pnReintentar') }}</button></p>
+  } @else if (planes() === null) {
+    <div class="planes" aria-busy="true"><div class="plan esqueleto"></div><div class="plan esqueleto"></div><div class="plan esqueleto"></div></div>
+  } @else {
+    <div class="planes">
+      @for (p of planes(); track p.clave) {
+        <article class="plan" [class.gratis]="esGratis(p)">
+          <h3>{{ p.nombre }}</h3>
+          <p class="precio">
+            @if (esGratis(p)) {
+              {{ i18n.t('pnGratisPrecio') }}
+            } @else if (precio(p); as pr) {
+              @if (pr.desde) { <small>{{ i18n.t('pnDesde') }}</small> }
+              {{ montoTexto(pr.monto, pr.moneda) }} <small>{{ i18n.t(periodo() === 'anual' ? 'pnPorAnio' : 'pnPorMes') }}</small>
+            } @else {
+              <small>{{ i18n.t('pnSinPrecio') }}</small>
+            }
+          </p>
+          <ul>
+            <li>{{ i18n.t('pnIncluyeFicha') }}</li>
+            <li>{{ i18n.t('pnIncluyeContacto') }}</li>
+            <li>{{ i18n.tf('pnFotos', { n: p.limiteFotos }) }}</li>
+            <li [class.no]="!p.permitePromociones || p.limiteOfertas === 0">{{ p.permitePromociones && p.limiteOfertas > 0 ? i18n.tf('pnPromos', { n: p.limiteOfertas }) : i18n.t('pnSinPromos') }}</li>
+            <li [class.no]="!p.veEstadisticas">{{ i18n.t(p.veEstadisticas ? 'pnStats' : 'pnSinStats') }}</li>
+            <li [class.no]="!p.permitePatrocinio">{{ i18n.t(p.permitePatrocinio ? 'pnPatrocinio' : 'pnSinPatrocinio') }}</li>
+          </ul>
+          <a class="boton" [class.secundario]="!esGratis(p)" [href]="registro">{{ i18n.tf('pnElegir', { plan: p.nombre }) }}</a>
+        </article>
+      }
+    </div>
+    <p class="nota">{{ i18n.t('pnPlanesNota') }}</p>
+  }
+</section>
+
+<section class="contenedor seccion dos" aria-labelledby="ver">
+  <div class="caja">
+    <h2 id="ver">{{ i18n.t('pnVerTitulo') }}</h2>
+    <div class="muestra" role="img" [attr.aria-label]="i18n.t('pnVerEjemplo') + ': ' + i18n.t('pnEjNombre')">
+      <div class="foto" aria-hidden="true"></div>
+      <div>
+        <span class="chip">{{ i18n.t('patrocinado') }}</span> <span class="chip claro-chip">{{ i18n.t('pnVerEjemplo') }}</span>
+        <h3>{{ i18n.t('pnEjNombre') }}</h3>
+        <p class="suave">{{ i18n.t('pnEjMeta') }}</p>
+        <p class="abierto">{{ i18n.t('pnEjAbierto') }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="caja">
+    <h2>{{ i18n.t('pnControlTitulo') }}</h2>
+    <ul class="control">
+      <li>{{ i18n.t('pnControl1') }}</li>
+      <li>{{ i18n.t('pnControl2') }}</li>
+      <li>{{ i18n.t('pnControl3') }}</li>
+    </ul>
+  </div>
+</section>
+
+<section class="contenedor seccion">
+  <app-contacto-negocio />
+</section>
+
+<section class="contenedor seccion" aria-labelledby="faq">
+  <h2 id="faq">{{ i18n.t('pnPregTitulo') }}</h2>
+  <div class="faq">
+    @for (f of preguntas; track f.q) {
+      <details><summary>{{ i18n.t(f.q) }}</summary><p>{{ i18n.t(f.a) }}</p></details>
+    }
+  </div>
+</section>
+
+<section class="cierre">
+  <div class="contenedor cierre-in">
+    <h2>{{ i18n.t('pnFinalTitulo') }}</h2>
+    <p>{{ i18n.t('pnFinalTexto') }}</p>
+    <a class="boton claro" [href]="registro">{{ i18n.t('pnRegistrar') }}</a>
+  </div>
+</section>

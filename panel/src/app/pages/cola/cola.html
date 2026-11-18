@@ -1,0 +1,149 @@
+<header class="cab">
+  <h1>Cola de revisión</h1>
+  <p class="suave chico">La solicitud más antigua va primero. Ámbar: más de 48 h de espera. Grana: más de 120 h.</p>
+</header>
+
+<nav class="tabs" aria-label="Tipo de solicitud">
+  @for (t of pestanas; track t.clave) {
+    <a routerLink="/revision" [queryParams]="consulta({ tipo: t.clave || null })" [class.on]="(tipo() || '') === t.clave" [attr.aria-current]="(tipo() || '') === t.clave ? 'page' : null">
+      {{ t.texto }} @if (conteo(t.clave) !== null) { <i>{{ conteo(t.clave) }}</i> }
+    </a>
+  }
+</nav>
+
+@if (!esPromos()) {
+  <div class="filtros">
+    <select aria-label="Región" [ngModel]="region() ?? ''" (ngModelChange)="filtrar('region', $event)">
+      <option value="">Todas las regiones</option>
+      @for (r of regiones(); track r.id) { <option [value]="r.id">{{ r.nombre }}</option> }
+    </select>
+    <select aria-label="Categoría" [ngModel]="categoria() ?? ''" (ngModelChange)="filtrar('categoria', $event)">
+      <option value="">Todas las categorías</option>
+      @for (c of categorias(); track c.id) { <option [value]="c.id">{{ c.etiqueta }}</option> }
+    </select>
+  </div>
+}
+
+@if (aviso(); as a) { <p class="aviso ok" role="status">{{ a }}</p> }
+@if (errorAccion(); as m) { <p class="aviso" role="alert">{{ m }}</p> }
+
+@if (cargando()) {
+  <p class="carga" aria-live="polite">Cargando…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else if (filas().length === 0) {
+  @if (!esPromos() && (chipRegion() || chipCategoria())) {
+    <app-vacio tipo="filtro" icono="filtro" titulo="No hay solicitudes con estos filtros">
+      <div class="vacio-e-chips">
+        @if (chipRegion(); as r) { <button type="button" class="chip-f" (click)="filtrar('region', '')">Región: {{ r }} ✕</button> }
+        @if (chipCategoria(); as c) { <button type="button" class="chip-f" (click)="filtrar('categoria', '')">Categoría: {{ c }} ✕</button> }
+      </div>
+      <p>Prueba quitando uno, o empieza de nuevo.</p>
+      <div class="vacio-e-bs"><button type="button" class="vb p" (click)="quitarFiltros()">Quitar todos los filtros</button></div>
+    </app-vacio>
+  } @else {
+    <app-vacio tipo="ok" icono="check" [titulo]="esPromos() ? 'No hay promociones por aprobar' : 'Todo al día'">
+      <p>{{ esPromos() ? 'Cuando un negocio mande una promoción, aparecerá aquí.' : 'No hay solicitudes por revisar.' }}</p>
+      <div class="vacio-e-bs">
+        @if ((pendientes.comunidad() ?? 0) > 0) { <a class="vb p" routerLink="/comunidad">Ir a Comunidad ({{ pendientes.comunidad() }})</a> }
+        @if ((pendientes.prospectos() ?? 0) > 0) { <a class="vb" [class.p]="(pendientes.comunidad() ?? 0) === 0" routerLink="/prospectos">Prospectos con acción vencida ({{ pendientes.prospectos() }})</a> }
+        @if ((pendientes.comunidad() ?? 0) === 0 && (pendientes.prospectos() ?? 0) === 0) { <a class="vb p" routerLink="/hoy">Volver a Hoy</a> }
+      </div>
+    </app-vacio>
+  }
+} @else {
+  <p class="atajos-ayuda suave chico"><kbd>J</kbd> <kbd>K</kbd> moverse · <kbd>A</kbd> aprobar · <kbd>R</kbd> rechazar · <kbd>Enter</kbd> abrir ficha</p>
+  <div class="maestro">
+    <div class="tarjeta lista">
+      @if (resolvibles().length > 0) {
+        <label class="todas casilla"><input type="checkbox" name="todas" [checked]="todasMarcadas()" (change)="marcarTodas()" /> Seleccionar todas las que se aprueban aquí <span class="suave chico">({{ resolvibles().length }})</span></label>
+      }
+      <ul>
+        @for (f of filas(); track f.clave; let n = $index) {
+          <li class="fila-c" [class.sel]="n === indice()" [class.ocupada]="trabajandoId() === f.clave">
+            @if (f.resolvible) {
+              <input type="checkbox" class="marca" [attr.aria-label]="'Marcar ' + (f.item?.nombreComercial ?? f.promo?.negocioNombre)" [checked]="marcadas().has(f.clave)" (change)="marcar(f.clave)" />
+            } @else { <span class="marca-vacia"></span> }
+            <button type="button" class="fila-boton" [attr.aria-current]="n === indice() ? 'true' : null" (click)="elegir(n)">
+              @if (f.item; as i) {
+                <span class="st" [class]="tipoInfo(i.tipo).clase">{{ tipoInfo(i.tipo).texto }}</span>
+                <span class="quien"><b>{{ i.nombreComercial }}</b><small>{{ categoriaDe(i) }}@if (i.regionNombre) { · {{ i.regionNombre }} }</small></span>
+                <span class="tiempo" [class]="urgencia(i.urgencia).clase">{{ espera(i.horasEspera) }}</span>
+              } @else if (f.promo; as p) {
+                <span class="st nueva">Promoción</span>
+                <span class="quien"><b>{{ tituloPromo(p.promocion) }}</b><small>{{ p.negocioNombre }}</small></span>
+                <span class="tiempo ok">{{ valor(p.promocion) }}</span>
+              }
+            </button>
+          </li>
+        }
+      </ul>
+    </div>
+
+    @if (actual(); as f) {
+      <section class="tarjeta detalle-c" aria-live="polite" [class.ocupada]="trabajandoId() === f.clave">
+        @if (f.item; as i) {
+          @if (i.tipo === 'foto' && i.url) {
+            <img class="foto-detalle" [src]="i.url" alt="Foto por revisar de {{ i.nombreComercial }}" />
+          } @else {
+            <div class="sin-foto">{{ tipoInfo(i.tipo).texto }}</div>
+          }
+          <div class="cab-detalle">
+            <div>
+              <h2>{{ i.nombreComercial }}</h2>
+              <p class="suave chico">{{ categoriaDe(i) }}@if (i.municipioNombre) { · {{ i.municipioNombre }} }@if (i.regionNombre) { · {{ i.regionNombre }} }</p>
+              <p class="suave chico">Enviada {{ hora(i.enviadaEn) }}</p>
+            </div>
+            <div class="espera"><b>{{ espera(i.horasEspera) }}</b><span class="st" [class]="urgencia(i.urgencia).clase">{{ urgencia(i.urgencia).texto }}</span></div>
+          </div>
+        } @else if (f.promo; as p) {
+          <div class="sin-foto promo">{{ valor(p.promocion) }}</div>
+          <div class="cab-detalle">
+            <div>
+              <h2>{{ tituloPromo(p.promocion) }}</h2>
+              <p class="suave chico">{{ p.negocioNombre }} · {{ periodo(p.promocion) }}</p>
+              @if (p.promocion.codigo) { <p><span class="codigo">{{ p.promocion.codigo }}</span></p> }
+              <p class="suave chico">Enviada {{ hora(p.enviadaEn) }}</p>
+              @if (p.promocion.condiciones) { <p class="chico suave cond">{{ p.promocion.condiciones }}</p> }
+            </div>
+          </div>
+        }
+        <div class="acciones">
+          @if (f.resolvible) {
+            <button type="button" class="mini-b ok" [disabled]="!!trabajandoId()" (click)="aprobarActual()">Aprobar <kbd>A</kbd></button>
+            <button type="button" class="mini-b mal" [disabled]="!!trabajandoId()" (click)="rechazarActual()">Rechazar… <kbd>R</kbd></button>
+          } @else if (f.item) {
+            <a class="mini-b ok enlace-b" [routerLink]="['/revision/negocios', f.item.negocioId]">Revisar la ficha <kbd>Enter</kbd></a>
+          }
+          <button type="button" class="mini-b" (click)="elegir(indice() + 1)" [disabled]="indice() >= filas().length - 1">Siguiente <kbd>J</kbd></button>
+        </div>
+        @if (rechazandoId() === f.clave) {
+          @if (f.promo; as p) {
+            <app-rechazo [limite]="MOTIVO_PROMOCION" ejemplo="Ej. El descuento no coincide con lo que ofrece el negocio." [trabajando]="trabajandoId() === f.clave" (confirmar)="rechazarPromo(p, $event)" (cancelar)="rechazandoId.set(null)" />
+          } @else if (f.item; as i) {
+            <app-rechazo [limite]="MOTIVO_FICHA" ejemplo="Ej. La foto está borrosa. Sube una con mejor luz." [trabajando]="trabajandoId() === f.clave" (confirmar)="rechazarFoto(i, $event)" (cancelar)="rechazandoId.set(null)" />
+          }
+        }
+      </section>
+    }
+  </div>
+
+  @if (marcadas().size > 0) {
+    <div class="lote" role="region" aria-label="Aprobar en lote">
+      <b>{{ marcadas().size }} {{ marcadas().size === 1 ? 'seleccionada' : 'seleccionadas' }}</b>
+      <span class="suave">Aprobar en lote solo aplica a fotos y promociones.</span>
+      <button type="button" class="mini-b" [disabled]="!!trabajandoId()" (click)="marcadas.set(vacio)">Quitar selección</button>
+      <button type="button" class="mini-b ok" [disabled]="!!trabajandoId()" (click)="aprobarLote()">{{ trabajandoId() === 'lote' ? 'Aprobando…' : 'Aprobar ' + marcadas().size }}</button>
+    </div>
+  }
+}
+
+@if (!cargando() && !fallo() && total() > 0) {
+  <div class="paginas">
+    <span class="chico suave">Mostrando {{ desde() }}–{{ hasta() }} de {{ total() }}</span>
+    <div class="acciones">
+      <a class="mini-b enlace-b" [class.inactivo]="!hayAnterior()" routerLink="/revision" [queryParams]="consulta({ pagina: nPagina() > 1 ? '' + nPagina() : null })" [attr.aria-disabled]="!hayAnterior()">← Anterior</a>
+      <a class="mini-b enlace-b" [class.inactivo]="!haySiguiente()" routerLink="/revision" [queryParams]="consulta({ pagina: '' + (nPagina() + 2) })" [attr.aria-disabled]="!haySiguiente()">Siguiente →</a>
+    </div>
+  </div>
+}

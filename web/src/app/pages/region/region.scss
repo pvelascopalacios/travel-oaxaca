@@ -1,0 +1,68 @@
+.pagina {
+  padding-block: 20px 56px;
+}
+
+.migas {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: var(--tinta-suave);
+  font-size: 0.88rem;
+
+  a {
+    color: inherit;
+  }
+}
+
+.cabecera {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 28px;
+
+  h1 {
+    margin: 0;
+    font: 800 clamp(2rem, 1.4rem + 3vw, 3.2rem) / 1.05 var(--fuente-titulo);
+  }
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--grana);
+  font: 700 0.78rem var(--fuente-texto);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cuenta {
+  margin: 0;
+  color: var(--tinta-suave);
+}
+
+.seccion {
+  margin-top: 36px;
+}
+
+.seccion-cabecera h2 {
+  margin: 0 0 16px;
+  font: 700 1.4rem var(--fuente-titulo);
+}
+
+.rejilla {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+}
+
+.vacia {
+  padding: 28px;
+  border-radius: var(--radio);
+  background: var(--cantera);
+  color: var(--tinta-suave);
+}
+
+.caja {
+  display: grid;
+  gap: 14px;
+  justify-items: start;
+  padding-block: 64px;
+}

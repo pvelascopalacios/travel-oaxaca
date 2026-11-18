@@ -1,0 +1,110 @@
+<div class="contenedor pagina">
+  <header class="no-imprimir cabecera">
+    <h1>{{ i18n.t('reporteMensual') }}</h1>
+    <p class="suave">{{ i18n.t('reporteTexto') }}</p>
+  </header>
+
+  @if (!sesion.listo() || cargandoNegocios()) {
+    <p class="suave" aria-live="polite">{{ i18n.t('cargando') }}</p>
+  } @else if (!sesion.autenticado()) {
+    <p class="suave">{{ i18n.t('guardadosSinSesion') }}</p>
+  } @else if (!negocios().length) {
+    <div class="vacio no-imprimir">
+      <p>{{ i18n.t('reporteSinNegocios') }}</p>
+      <a class="boton" [routerLink]="['/', i18n.lang(), 'para-negocios']">{{ i18n.t('paraNegocios') }}</a>
+    </div>
+  } @else {
+    <div class="controles no-imprimir">
+      <label>{{ i18n.t('negocio') }}
+        <select [value]="negocioId()" (change)="elegirNegocio($any($event.target).value)">
+          @for (n of negocios(); track n.id) {
+            <option [value]="n.id">{{ n.nombreComercial }}</option>
+          }
+        </select>
+      </label>
+      @if (reportes().length) {
+        <label>{{ i18n.t('mes') }}
+          <select [value]="elegido()" (change)="cambiarMes($any($event.target).value)">
+            @for (r of reportes(); track r.id) {
+              <option [value]="r.id">{{ nombreMes(r) }}</option>
+            }
+          </select>
+        </label>
+        <button type="button" class="boton" (click)="imprimir()">{{ i18n.t('imprimir') }}</button>
+      }
+    </div>
+
+    @if (cargandoReportes()) {
+      <p class="suave" aria-live="polite">{{ i18n.t('cargando') }}</p>
+    } @else if (fallo()) {
+      <p class="vacio no-imprimir">{{ i18n.t('errorCarga') }}</p>
+    } @else if (!reportes().length) {
+      <p class="vacio no-imprimir">{{ i18n.t('reporteSinMeses') }}</p>
+    } @else if (resumen(); as r) {
+      <article class="hoja" [attr.aria-label]="i18n.t('reporteMensual')">
+        <div class="cab">
+          <div class="marca">Travel Oaxaca<small>{{ i18n.t('porExplora') }}</small></div>
+          <div class="periodo"><strong>{{ i18n.t('reporteMensual') }}</strong><br /><span>{{ rangoTexto(r) }}</span></div>
+        </div>
+        <div>
+          <h2>{{ negocio()?.nombreComercial }}</h2>
+        </div>
+
+        <div class="gran">
+          <div class="cifra">
+            <b>{{ numero(r.vistas) }}</b><span>{{ i18n.t('vistasFicha') }}</span>
+            @if (dVistas(); as d) { <em class="delta" [class.baja]="d < 0">{{ signo(d) }} % {{ i18n.t('vsMesAnterior') }}</em> }
+          </div>
+          <div class="cifra">
+            <b>{{ numero(r.contactos) }}</b><span>{{ i18n.t('contactosTotales') }}</span>
+            @if (dContactos(); as d) { <em class="delta" [class.baja]="d < 0">{{ signo(d) }} % {{ i18n.t('vsMesAnterior') }}</em> }
+          </div>
+          @if (r.tasa != null) {
+            <div class="cifra">
+              <b>{{ r.tasa }} %</b><span>{{ i18n.t('deVistaAContacto') }}</span>
+              @if (dTasa(); as d) { <em class="delta" [class.baja]="d < 0">{{ signo(d) }} {{ i18n.t('puntos') }}</em> }
+            </div>
+          }
+        </div>
+
+        @if (r.acciones.length) {
+          <div>
+            <h3>{{ i18n.t('queHicieron') }}</h3>
+            <div class="tabla-caja">
+              <table>
+                <thead><tr><th scope="col">{{ i18n.t('accion') }}</th><th scope="col">{{ i18n.t('veces') }}</th></tr></thead>
+                <tbody>
+                  @for (a of r.acciones; track a.tipo) {
+                    <tr><td>{{ i18n.tDinamico('uso', a.tipo) }}</td><td>{{ numero(a.total) }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+        @if (r.origenes.length) {
+          <div>
+            <h3>{{ i18n.t('deDondeLlegaron') }}</h3>
+            <div class="tabla-caja">
+              <table>
+                <thead><tr><th scope="col">{{ i18n.t('origen') }}</th><th scope="col">{{ i18n.t('vistas') }}</th><th scope="col">{{ i18n.t('contactos') }}</th><th scope="col">{{ i18n.t('delTotal') }}</th></tr></thead>
+                <tbody>
+                  @for (o of r.origenes; track o.clave) {
+                    <tr>
+                      <td>{{ i18n.tDinamico('origen', o.clave) }}</td>
+                      <td>{{ numero(o.vistas) }}</td>
+                      <td>{{ numero(o.contactos) }}</td>
+                      <td class="pct"><span class="barra"><i [style.width.%]="o.porcentaje"></i></span> {{ o.porcentaje }} %</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+        <p class="pie">{{ generadoTexto(r) }} {{ i18n.t('contactosNota') }}</p>
+      </article>
+    }
+  }
+</div>

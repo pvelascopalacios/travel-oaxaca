@@ -1,0 +1,137 @@
+@if (cargando() && !ficha()) {
+  <p class="carga" aria-live="polite">Cargando tus fotos…</p>
+} @else if (fallo(); as f) {
+  <p class="aviso" role="alert">{{ f.general }} <button type="button" class="enlace" (click)="cargar()">Reintentar</button></p>
+} @else if (ficha(); as n) {
+  <app-cabecera-opciones [id]="id()" [nombre]="n.nombreComercial" [estado]="n.estado" [raiz]="raiz()" activa="fotos" />
+
+  @if (n.estado === 'en_revision') {
+    <p class="aviso ambar" role="status"><strong>Tu ficha está en revisión.</strong> Las fotos no se pueden cambiar hasta que el equipo la apruebe o te pida cambios.</p>
+  } @else if (n.estado === 'archivada') {
+    <p class="aviso ambar" role="status">Este negocio está archivado y ya no se puede editar.</p>
+  }
+
+  <section class="tarjeta" aria-label="Fotos de tu negocio">
+    <div class="fila-cab">
+      <h2>Fotos de tu negocio</h2>
+      @if (plan(); as p) { <span class="etiqueta">Plan {{ p.plan.nombre }}</span> }
+    </div>
+
+    <div class="medidor">
+      <div class="fila-cab">
+        <strong>{{ n.medios.length }} de {{ cupo().maximo }} fotos</strong>
+        <span class="suave chico">Máximo 20 por ficha · la portada es la que se ve primero</span>
+      </div>
+      <div class="barra" role="img" [attr.aria-label]="n.medios.length + ' de ' + cupo().maximo + ' fotos'"><i [class.lleno]="cupo().lleno" [style.width.%]="porcentaje()"></i></div>
+    </div>
+
+    @if (!soloLectura()) {
+      @if (cupo().lleno) {
+        <p class="aviso ambar" role="status">
+          @if (plan(); as p) { Tu plan {{ p.plan.nombre }} admite {{ cupo().maximo }} {{ cupo().maximo === 1 ? 'foto' : 'fotos' }}. Quita una o sube de plan para agregar más. }
+          @else { Llegaste al máximo de {{ cupo().maximo }} fotos. Quita una para agregar otra. }
+        </p>
+      }
+    }
+
+    @if (rechazados().length) {
+      <ul class="aviso" role="alert">
+        @for (r of rechazados(); track r) { <li>{{ r }}</li> }
+      </ul>
+    }
+    @if (aviso(); as a) { <p class="aviso ok" role="status">{{ a }}</p> }
+
+    @if (cola().length) {
+      <ul class="cola" aria-label="Fotos por subir">
+        @for (a of cola(); track a.clave) {
+          <li class="arch" [class.mala]="a.paso === 'error'">
+            <img class="mini" [src]="a.vista" alt="" />
+            <div class="nom">
+              <strong>{{ a.archivo.name }}</strong>
+              <small>{{ pesoTexto(a.archivo.size) }} · {{ textoPaso(a) }}</small>
+              @if (a.paso === 'subiendo') { <div class="barra chica"><i [style.width.%]="a.progreso"></i></div> }
+              @if (a.paso === 'lista') {
+                <input type="text" class="pie" placeholder="Pie de foto (opcional)" maxlength="200" [value]="a.pie" (input)="cambiarPie(a.clave, $any($event.target).value)" [attr.aria-label]="'Pie de foto de ' + a.archivo.name" />
+              }
+            </div>
+            <div class="acc">
+              @if (a.paso === 'error') { <button type="button" class="mini-b" (click)="reintentar(a.clave)">Reintentar</button> }
+              <button type="button" class="mini-b" (click)="descartar(a.clave)">{{ a.paso === 'lista' || a.paso === 'error' ? 'Quitar' : 'Cancelar' }}</button>
+            </div>
+          </li>
+        }
+      </ul>
+      @if (listas() > 0) {
+        <div class="acciones">
+          <button type="button" class="boton" [disabled]="ocupada()" (click)="subirTodas()">{{ ocupada() ? 'Subiendo…' : 'Subir ' + listas() + (listas() === 1 ? ' foto' : ' fotos') }}</button>
+        </div>
+      }
+    }
+
+    @if (medios().length || !soloLectura()) {
+      <ul class="fotos">
+        @for (m of medios(); track m.medioId; let i = $index; let ultimo = $last) {
+          <li class="foto">
+            <div class="img">
+              @if (!rotas().has(m.medioId)) {
+                <img [src]="m.url" [alt]="m.pieTexto || 'Foto de ' + n.nombreComercial" loading="lazy" (error)="rota(m.medioId)" />
+              } @else {
+                <span class="sin-img">No se pudo cargar la imagen</span>
+              }
+              @if (portada() === m.medioId) { <span class="ins portada">Portada</span> }
+              <span class="ins" [class]="'ins ' + moderacion(m.moderacion).clase">{{ moderacion(m.moderacion).texto }}</span>
+              @if (!soloLectura() && quitandoId() !== m.medioId) {
+                <div class="ac">
+                  <button type="button" class="mini-b" [disabled]="i === 0" (click)="mover(i, -1)" [attr.aria-label]="'Mover antes, foto ' + (i + 1)">←</button>
+                  <button type="button" class="mini-b" [disabled]="ultimo" (click)="mover(i, 1)" [attr.aria-label]="'Mover después, foto ' + (i + 1)">→</button>
+                  @if (portada() !== m.medioId && m.moderacion !== 'rechazado') { <button type="button" class="mini-b" (click)="hacerPortada(m.medioId)">Hacer portada</button> }
+                  <button type="button" class="mini-b mal" (click)="pedirQuitar(m.medioId)">Quitar</button>
+                </div>
+              }
+            </div>
+            <div class="cuerpo">
+              @if (m.pieTexto) { <p class="pie-t">{{ m.pieTexto }}</p> } @else { <p class="pie-t suave">Sin pie de foto</p> }
+              @if (m.moderacion === 'rechazado') {
+                <p class="motivo"><strong>Motivo:</strong> {{ m.motivoRechazo || 'El equipo no la aprobó. Sube otra.' }}</p>
+              }
+              @if (!soloLectura()) {
+                @if (quitandoId() === m.medioId) {
+                  <div class="confirma" role="alertdialog" aria-live="assertive">
+                    <p><strong>¿Quitar esta foto?</strong> Se borra y no se puede deshacer.</p>
+                    <div class="fila">
+                      <button type="button" class="mini-b mal" [disabled]="envioQuitar.trabajando()" (click)="quitar(m.medioId)">{{ envioQuitar.trabajando() ? 'Quitando…' : 'Sí, quitar' }}</button>
+                      <button type="button" class="mini-b" (click)="quitandoId.set(null)">No</button>
+                    </div>
+                    @if (envioQuitar.error().general; as g) { <p class="msg" role="alert">{{ g }}</p> }
+                  </div>
+                }
+              }
+            </div>
+          </li>
+        }
+        @if (!soloLectura()) {
+        <li class="subida" [class.activa]="arrastrando()" [class.apagada]="!puedeSubir()" (dragover)="alArrastrar($event, true)" (dragleave)="alArrastrar($event, false)" (drop)="alSoltar($event)">
+          <strong>Arrastra tus fotos aquí</strong>
+          <span class="suave chico">JPEG, PNG o WebP · hasta 10 MB cada una</span>
+          <label class="boton" [class.deshabilitado]="!puedeSubir()">
+            Elegir fotos
+            <input type="file" class="oculto" multiple [accept]="aceptar" [disabled]="!puedeSubir()" (change)="alElegir($event)" />
+          </label>
+        </li>
+        }
+      </ul>
+      <p class="suave chico">Las fotos nuevas las aprueba el equipo antes de verse en el sitio; mientras tanto solo tú las ves. El pie de foto se escribe al subirla; para cambiarlo, quita la foto y súbela otra vez.</p>
+    }
+    @if (!medios().length && !cola().length) {
+      <p class="vacio">Todavía no tienes fotos. Sube al menos las que pide la lista de «Resumen» para poder enviar tu ficha a revisión.</p>
+    }
+  </section>
+
+  @if (!soloLectura() && medios().length) {
+    <div class="acciones guardar-fijo">
+      <button type="button" class="boton" [disabled]="!sucio() || envioOrden.trabajando()" (click)="guardarOrden()">{{ envioOrden.trabajando() ? 'Guardando…' : 'Guardar orden y portada' }}</button>
+      @if (sucio()) { <span class="suave chico">Tienes cambios sin guardar.</span> }
+    </div>
+    <app-estado-guardado [envio]="envioOrden" />
+  }
+}

@@ -1,0 +1,150 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.buscador {
+  position: relative;
+}
+
+.campo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 4px 4px 4px 16px;
+  background: var(--papel);
+  border: 1px solid var(--linea);
+  border-radius: 999px;
+  box-shadow: var(--sombra);
+
+  &:focus-within {
+    outline: 3px solid var(--laguna);
+    outline-offset: 2px;
+  }
+
+  svg {
+    flex: none;
+    color: var(--tinta-suave);
+  }
+}
+
+input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font-size: 1rem;
+  color: var(--noche);
+
+  &::placeholder {
+    color: var(--tinta-suave);
+  }
+}
+
+.boton {
+  flex: none;
+}
+
+@media (max-width: 480px) {
+  .boton {
+    display: none;
+  }
+}
+
+.panel {
+  position: absolute;
+  z-index: 30;
+  inset-inline: 0;
+  top: calc(100% + 8px);
+  max-height: min(70vh, 460px);
+  overflow-y: auto;
+  padding: 8px;
+  background: var(--papel);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-fuerte);
+}
+
+.grupo-titulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 10px 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+
+.enlace {
+  border: 0;
+  background: none;
+  color: var(--grana);
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 32px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.opcion {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  min-height: var(--toque);
+  justify-content: center;
+  gap: 2px;
+  color: var(--noche);
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &.activa {
+    background: var(--cantera);
+  }
+}
+
+.ico {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  fill: none;
+  stroke: var(--tinta-suave);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.opcion:has(.ico) {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0;
+}
+
+.detalle {
+  font-size: 0.85rem;
+  color: var(--tinta-suave);
+}
+
+.estado {
+  padding: 14px 10px;
+  color: var(--tinta-suave);
+}
+
+.dos {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  text-align: left;
+}

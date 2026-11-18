@@ -1,0 +1,77 @@
+<a class="saltar" href="#contenido">{{ i18n.t('saltar') }}</a>
+
+<header class="encabezado" [class.sobre-inicio]="esInicio()">
+  <div class="contenedor fila">
+    <a class="logo" [routerLink]="['/', i18n.lang()]" [attr.aria-label]="i18n.t('marca')">
+      <img src="logo-emblema.png" width="44" height="44" alt="" />
+      <span class="nombre">{{ i18n.t('marca') }}<small>{{ i18n.t('porExplora') }}</small></span>
+    </a>
+
+    <div class="buscador-encabezado" [class.oculto]="!menusVisibles()">
+      <app-buscador idCampo="q-encabezado" />
+    </div>
+
+    <div class="acciones">
+      <nav class="idiomas" [attr.aria-label]="i18n.t('idioma')">
+        @for (l of idiomas; track l) {
+          <a [href]="enOtroIdioma()(l)" [attr.hreflang]="l" [attr.lang]="l" [class.activo]="i18n.lang() === l" [attr.aria-current]="i18n.lang() === l ? 'true' : null">{{ l.toUpperCase() }}</a>
+        }
+      </nav>
+      <a class="enlace-texto solo-ancho" [routerLink]="['/', i18n.lang(), 'para-negocios']">{{ i18n.t('paraNegocios') }}</a>
+      <a class="boton secundario solo-ancho" [routerLink]="['/', i18n.lang(), sesion.autenticado() ? 'perfil' : 'ingresar']">{{ sesion.autenticado() ? sesion.primerNombre() : i18n.t('iniciarSesion') }}</a>
+    </div>
+  </div>
+
+  <nav class="grupos" [class.oculto]="!menusVisibles()" [attr.aria-label]="i18n.t('navegacionPrincipal')">
+    <div class="contenedor">
+      <ul>
+        @for (g of grupos; track g.clave) {
+          <li>
+            <a [routerLink]="['/', i18n.lang(), g.ruta]" routerLinkActive="activo">{{ i18n.t(g.titulo) }}</a>
+          </li>
+        }
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<main id="contenido" [class.bajo-encabezado-fijo]="esInicio()">
+  <router-outlet />
+</main>
+
+<footer class="pie">
+  <div class="contenedor columnas">
+    <div class="bloque-marca">
+      <img src="logo-emblema.png" width="56" height="56" alt="" />
+      <div>
+      <p class="marca-pie">{{ i18n.t('marca') }}</p>
+      <p class="suave">{{ i18n.t('pieTexto') }}</p>
+      </div>
+    </div>
+    <ul>
+      <li><a [routerLink]="['/', i18n.lang(), 'para-negocios']">{{ i18n.t('pieNegocios') }}</a></li>
+      <li><a [routerLink]="['/', i18n.lang(), 'privacidad']">{{ i18n.t('pieAviso') }}</a></li>
+      <li><a [routerLink]="['/', i18n.lang(), 'terminos']">{{ i18n.t('pieTerminos') }}</a></li>
+      <li><a href="https://www.facebook.com/exploraoaxacamexico" rel="noopener" target="_blank">{{ i18n.t('pieOaxacaExplora') }}</a></li>
+    </ul>
+  </div>
+</footer>
+
+<nav class="barra-movil" [attr.aria-label]="i18n.t('navegacionMovil')">
+  <a [routerLink]="['/', i18n.lang()]" [routerLinkActiveOptions]="{ exact: true }" routerLinkActive="activo">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    <span>{{ i18n.t('inicio') }}</span>
+  </a>
+  <a [routerLink]="['/', i18n.lang(), 'buscar']" routerLinkActive="activo">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <span>{{ i18n.t('buscar') }}</span>
+  </a>
+  <a [routerLink]="['/', i18n.lang(), 'guardados']" routerLinkActive="activo">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.600-7 10-7 10z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+    <span>{{ i18n.t('guardados') }}</span>
+  </a>
+  <a [routerLink]="['/', i18n.lang(), sesion.autenticado() ? 'perfil' : 'ingresar']" routerLinkActive="activo">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.500" r="3.500" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 20c.8-3.600 3.600-5.500 7-5.500s6.200 1.900 7 5.500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <span>{{ i18n.t('cuenta') }}</span>
+  </a>
+</nav>

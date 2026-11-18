@@ -1,0 +1,208 @@
+/* Travel Oaxaca: identidad tomada del logotipo de Oaxaca Explora, en versión sobria.
+   60 % blanco y cantera, 25 % noche, 10 % grana (lo que se toca), 5 % el resto, cada color con un solo trabajo. */
+:root {
+  --noche: #1d2433; /* texto, portada y pie */
+  --noche-2: #2a3347;
+  --grana: #a5174f; /* único color de acción: botones, enlaces, grupo activo */
+  --grana-oscuro: #86113e;
+  --ocre: #e9a21b; /* solo «Patrocinado» y estrellas de calificación */
+  --sierra: #41692f; /* solo estados: abierto, verificado, gratis */
+  --laguna: #17707b; /* mapa e información */
+  --cantera: #eef1ea; /* fondo de secciones de apoyo */
+  --fondo: #ffffff;
+  --papel: #ffffff;
+  --tinta: var(--noche);
+  --tinta-suave: #5c6270;
+  /* Tonos de categoría: fondos pastel con su tinta, solo para distinguir secciones (dormir, comer…). La acción sigue siendo --grana. */
+  --tono-1: #fbe6ee; --tono-1-tinta: #a5174f;
+  --tono-2: #fdefcf; --tono-2-tinta: #a86500;
+  --tono-3: #e2efd9; --tono-3-tinta: #41692f;
+  --tono-4: #d9eef0; --tono-4-tinta: #17707b;
+  --tono-5: #f6e3da; --tono-5-tinta: #b4492a;
+  --linea: #dfe3dc;
+  --sombra: 0 1px 3px rgb(29 36 51 / 10%), 0 8px 22px rgb(29 36 51 / 7%);
+  --sombra-fuerte: 0 12px 32px rgb(29 36 51 / 18%);
+  --radio: 18px;
+  --fuente-titulo: 'Bricolage Grotesque', 'Inter', system-ui, sans-serif;
+  --fuente: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ancho: 1180px;
+  --toque: 44px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--tinta);
+  font: 400 16px/1.55 var(--fuente);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--fuente-titulo);
+  line-height: 1.1;
+  margin: 0;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--laguna);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.contenedor {
+  width: 100%;
+  max-width: var(--ancho);
+  margin-inline: auto;
+  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+}
+
+.visualmente-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Botones: un solo estilo de acción principal. */
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--toque);
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 1.5px solid var(--grana);
+  background: var(--grana);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--grana-oscuro);
+    border-color: var(--grana-oscuro);
+  }
+
+  &.secundario {
+    background: transparent;
+    color: var(--grana);
+
+    &:hover {
+      background: rgb(165 23 79 / 8%);
+    }
+  }
+}
+
+.seccion {
+  padding-block: 40px 8px;
+}
+
+.seccion-cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+
+  h2 {
+    font-size: clamp(1.4rem, 1.1rem + 1vw, 1.9rem);
+  }
+
+  a {
+    color: var(--grana);
+    font-weight: 600;
+    text-decoration: none;
+    min-height: var(--toque);
+    display: inline-flex;
+    align-items: center;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.rejilla {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+}
+
+.aviso-error {
+  margin-top: 24px;
+  padding: 14px 16px;
+  border: 1px solid var(--linea);
+  border-left: 5px solid var(--grana);
+  border-radius: 12px;
+  background: var(--papel);
+}
+
+/* Impresión (reporte mensual): sin menús, barras ni controles; la hoja ocupa toda la página. */
+@media print {
+  .encabezado,
+  .pie,
+  .barra-movil,
+  .saltar,
+  .no-imprimir {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  .hoja {
+    max-width: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+}
+
+/* Comunidad: comentarios al final de las fichas y enlace para reportar un negocio. */
+.bloque-com { display: block; margin-top: 32px; }
+.reportar-ficha { margin: 24px 0 0; text-align: center; }
+.enlace-chico { min-height: 36px; padding: 0 8px; border: 0; background: none; color: var(--tinta-suave); font: inherit; font-size: 0.86rem; text-decoration: underline; cursor: pointer; }
